@@ -9,3 +9,7 @@ export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || "/api",
   withCredentials: true,
 });
+
+// Returns the error message sent by the API (e.g. "Invalid email or password."),
+// or the fallback text when there is none (network error, server down).
+export const getErrorMessage = (err, fallback) => err.response?.data?.message || fallback;

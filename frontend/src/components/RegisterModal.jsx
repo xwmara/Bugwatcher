@@ -1,10 +1,7 @@
-import { useState, useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
-import { api } from "../api/client";
+import { useState } from "react";
+import { api, getErrorMessage } from "../api/client";
 
 export default function RegisterModal({ onClose }) {
-  const { registerUser } = useContext(AuthContext);
-
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("TST"); // default tester
@@ -12,25 +9,20 @@ export default function RegisterModal({ onClose }) {
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setError("");
     try {
-      
-      const res = await api.post("/users/register", {
-        email,
-        password,
-        role
-        
-      })
-
-      if (!res.data.success) {
-        setError("Acest email este deja folosit.");
-        return;
-      }
+      // axios throws for any non-2xx status, so reaching the next line means 201 Created
+      await api.post("/users/register", { email, password, role });
 
       alert("Cont creat cu succes! Acum te poți loga.");
       onClose();
-    } catch (error) {
-      setError("A apărut o eroare la înregistrare.");
-    
+    } catch (err) {
+      if (err.response?.status === 409) {
+        setError("Acest email este deja folosit.");
+      } else {
+        // e.g. "Password too weak." or the rate limit message
+        setError(getErrorMessage(err, "A apărut o eroare la înregistrare."));
+      }
     }
   };
 
