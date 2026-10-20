@@ -38,7 +38,7 @@ export default function Home() {
           <AddProjectModal onClose={() => setShowAddProject(false)} />
         )}
 
-        {/* <BugListForMP /> */}
+        <BugListForMP />
       </div>
     );
   }

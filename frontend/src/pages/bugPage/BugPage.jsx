@@ -3,10 +3,8 @@ import { useContext, useEffect, useId, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { AppContext } from "../../context/AppContext";
+import { STATUSES, STATUS_LABELS } from "../../constants/bugs";
 import "./bugPage.css";
-
-const STATUSES = ["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"];
-const STATUS_LABELS = { OPEN: "Open", IN_PROGRESS: "In progress", RESOLVED: "Resolved", CLOSED: "Closed" };
 
 // Shows a commit link, or a dash when there is none
 const CommitLink = ({ href }) =>

@@ -12,21 +12,6 @@ export const AppProvider = ({ children }) => {
   const { user } = useContext(AuthContext);
   const userId = user?.id;
 
-  const addProject = (project) => {
-    setProjects((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        name: project.name,
-        repo: project.repo,
-        owner: project.owner,
-        team: project.team || [],
-        testers: [],
-        bugs: []
-      }
-    ]);
-  };
-
   const fetchProjects = useCallback(async () => {
     setLoading(true);
     try {
@@ -130,38 +115,13 @@ export const AppProvider = ({ children }) => {
       });
   };
 
-  // 🔹 MP ➜ își alocă bug
-  const assignBug = (bugId, userEmail) => {
-    setBugs((prev) =>
-      prev.map((b) =>
-        b.id === bugId
-          ? { ...b, assignedTo: userEmail, status: "In Progress" }
-          : b
-      )
-    );
-  };
-
-  // 🔹 MP ➜ marchează rezolvat
-  const resolveBug = (bugId, commitLink) => {
-    setBugs((prev) =>
-      prev.map((b) =>
-        b.id === bugId
-          ? { ...b, status: "Resolved", resolveCommit: commitLink }
-          : b
-      )
-    );
-  };
-
   return (
     <AppContext.Provider
       value={{
         projects,
         bugs,
-        addProject,
         addTesterToProject,
         addBug,
-        assignBug,
-        resolveBug,
         fetchProjects,
         loading,
       }}
