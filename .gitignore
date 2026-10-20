@@ -1,6 +1,9 @@
 node_modules
 .env
 
+# Personal editor settings
+.vscode/
+
 # Local AI assistant files (never committed)
 CLAUDE.md
 .claude/
