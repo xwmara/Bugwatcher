@@ -1,6 +1,6 @@
 import { useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { api } from "../api/client";
+import { api, getErrorMessage } from "../api/client";
 
 export default function LoginModal({ onClose }) {
   const { loginUser } = useContext(AuthContext);
@@ -11,20 +11,19 @@ export default function LoginModal({ onClose }) {
 
   const handleLogin = async (e) => {
     e.preventDefault();
-
-    const res = await api.post('/users/login', { 
-      email,  
-      password
-    });
-    
-    // console.log(res.data);
-    if (!res.data) {
-      setError("Email sau parolă incorecte.");
-      return;
+    setError("");
+    try {
+      const res = await api.post('/users/login', { email, password });
+      loginUser(res.data);
+      onClose();
+    } catch (err) {
+      if (err.response?.status === 401) {
+        setError("Email sau parolă incorecte.");
+      } else {
+        // e.g. the rate limit message, or no connection to the server
+        setError(getErrorMessage(err, "A apărut o eroare la autentificare."));
+      }
     }
-    loginUser(res.data);
-
-    onClose();
   };
 
   return (
