@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useEffect } from "react";
-import { createContext, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { api } from "../api/client";
+import { AuthContext } from "./AuthContext";
 
 export const AppContext = createContext();
 
@@ -9,6 +9,8 @@ export const AppProvider = ({ children }) => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [bugs, setBugs] = useState([]);
+  const { user } = useContext(AuthContext);
+  const userId = user?.id;
 
   const addProject = (project) => {
     setProjects((prev) => [
@@ -25,7 +27,7 @@ export const AppProvider = ({ children }) => {
     ]);
   };
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     setLoading(true);
     try {
       console.log("Attempting to fetch projects...");
@@ -66,12 +68,19 @@ export const AppProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-    
-  }
+  }, []);
 
+  // Load the projects of the logged-in user, and clear them on logout,
+  // so the next user never sees the previous user's data.
   useEffect(() => {
-    fetchProjects();
-  }, [])
+    if (userId) {
+      fetchProjects();
+    } else {
+      setProjects([]);
+      setBugs([]);
+      setLoading(false);
+    }
+  }, [userId, fetchProjects]);
 
   const addTesterToProject = (projectId, testerEmail) => {
     // Call backend to join project
