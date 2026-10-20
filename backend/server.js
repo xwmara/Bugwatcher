@@ -3,6 +3,7 @@ import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import cookieParser from 'cookie-parser';
+import helmet from 'helmet';
 import db from './models/index.js';
 import userRouter from './routers/userRouter.js';
 import projectRouter from './routers/projectRouter.js';
@@ -21,6 +22,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
+// Standard security headers (e.g. no MIME sniffing, no framing, hide "X-Powered-By: Express")
+app.use(helmet());
 app.use(express.json());
 app.use(cors({
     origin: CLIENT_URL,
