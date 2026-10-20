@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import RegisterModal from './RegisterModal';
+import { NotificationContext } from '../context/NotificationContext';
 import { api } from '../api/client';
 import { httpError } from '../test/httpError';
 
@@ -10,24 +11,33 @@ vi.mock('../api/client', async (importOriginal) => ({
   api: { post: vi.fn() },
 }));
 
+function renderRegister() {
+  const notify = vi.fn();
+  const onClose = vi.fn();
+  render(
+    <NotificationContext.Provider value={{ notify }}>
+      <RegisterModal onClose={onClose} />
+    </NotificationContext.Provider>
+  );
+  return { notify, onClose };
+}
+
 async function fillAndSubmit({ role } = {}) {
   const user = userEvent.setup();
   await user.type(screen.getByLabelText('Email'), 'ana@example.com');
-  await user.type(screen.getByLabelText('Parolă'), 'Correct-Horse-Battery-42');
-  if (role) await user.selectOptions(screen.getByLabelText('Rol'), role);
-  await user.click(screen.getByRole('button', { name: 'Creează cont' }));
+  await user.type(screen.getByLabelText('Password'), 'Correct-Horse-Battery-42');
+  if (role) await user.selectOptions(screen.getByLabelText('Role'), role);
+  await user.click(screen.getByRole('button', { name: 'Create account' }));
 }
 
 describe('RegisterModal', () => {
   beforeEach(() => {
     api.post.mockReset();
-    vi.spyOn(window, 'alert').mockImplementation(() => {});
   });
 
   it('registers a tester by default, confirms and closes', async () => {
     api.post.mockResolvedValue({ status: 201, data: { id: 1 } });
-    const onClose = vi.fn();
-    render(<RegisterModal onClose={onClose} />);
+    const { notify, onClose } = renderRegister();
 
     await fillAndSubmit();
 
@@ -36,13 +46,13 @@ describe('RegisterModal', () => {
       password: 'Correct-Horse-Battery-42',
       role: 'TST',
     });
-    expect(window.alert).toHaveBeenCalledWith('Cont creat cu succes! Acum te poți loga.');
+    expect(notify).toHaveBeenCalledWith('Account created. You can now log in.');
     expect(onClose).toHaveBeenCalled();
   });
 
   it('sends the chosen role', async () => {
     api.post.mockResolvedValue({ status: 201, data: {} });
-    render(<RegisterModal onClose={vi.fn()} />);
+    renderRegister();
 
     await fillAndSubmit({ role: 'MP' });
 
@@ -51,22 +61,21 @@ describe('RegisterModal', () => {
 
   it('says when the email is already used', async () => {
     api.post.mockRejectedValue(httpError(409, 'User with this email already exists.'));
-    const onClose = vi.fn();
-    render(<RegisterModal onClose={onClose} />);
+    const { onClose } = renderRegister();
 
     await fillAndSubmit();
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Acest email este deja folosit.');
+    expect(await screen.findByRole('alert')).toHaveTextContent('This email is already registered.');
     expect(onClose).not.toHaveBeenCalled();
   });
 
   it('shows the reason from the server, e.g. a weak password', async () => {
     api.post.mockRejectedValue(httpError(400, 'Password too weak.'));
-    render(<RegisterModal onClose={vi.fn()} />);
+    const { notify } = renderRegister();
 
     await fillAndSubmit();
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Password too weak.');
-    expect(window.alert).not.toHaveBeenCalled();
+    expect(notify).not.toHaveBeenCalled();
   });
 });

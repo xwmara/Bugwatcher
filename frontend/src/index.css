@@ -269,3 +269,49 @@ body {
 /* small utilities */
 .muted { color: var(--text-muted); font-size:13px }
 .container { max-width:1100px; margin: 28px auto; padding: 0 18px }
+/* Notifications (see context/NotificationContext.jsx) */
+.notices {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: min(360px, calc(100vw - 32px));
+}
+.notice {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  color: var(--text);
+}
+.notice.success { border-left: 4px solid #10b981; }
+.notice.error { border-left: 4px solid #ef4444; }
+.notice button {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.form-error { color: #f87171; }
+.form-success { color: #34d399; }
+
+/* Tester home and logged-out home: same width and side spacing as .container */
+.tst-dashboard,
+.not-logged {
+  max-width: 1100px;
+  margin: 28px auto;
+  padding: 0 18px;
+}
+.not-logged { text-align: center; }
+.not-logged .muted { font-size: 15px; margin-top: 8px; }
+.tester-project-card .muted { margin-top: 8px; }

@@ -1,7 +1,9 @@
 import { useState, useId } from "react";
 import { api, getErrorMessage } from "../api/client";
+import { useNotify } from "../context/NotificationContext";
 
 export default function RegisterModal({ onClose }) {
+  const notify = useNotify();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("TST"); // default tester
@@ -15,14 +17,14 @@ export default function RegisterModal({ onClose }) {
       // axios throws for any non-2xx status, so reaching the next line means 201 Created
       await api.post("/users/register", { email, password, role });
 
-      alert("Cont creat cu succes! Acum te poți loga.");
+      notify("Account created. You can now log in.");
       onClose();
     } catch (err) {
       if (err.response?.status === 409) {
-        setError("Acest email este deja folosit.");
+        setError("This email is already registered.");
       } else {
         // e.g. "Password too weak." or the rate limit message
-        setError(getErrorMessage(err, "A apărut o eroare la înregistrare."));
+        setError(getErrorMessage(err, "Could not create the account. Please try again."));
       }
     }
   };
@@ -30,9 +32,9 @@ export default function RegisterModal({ onClose }) {
   return (
     <div className="modal-overlay">
       <div className="modal">
-        <h2>Înregistrare</h2>
+        <h2>Create an account</h2>
 
-        {error && <p role="alert" style={{ color: "red" }}>{error}</p>}
+        {error && <p role="alert" className="form-error">{error}</p>}
 
         <form onSubmit={handleRegister} className="register-form">
           <label htmlFor={`${id}-email`}>Email</label>
@@ -44,7 +46,7 @@ export default function RegisterModal({ onClose }) {
             onChange={(e) => setEmail(e.target.value)}
           />
 
-          <label htmlFor={`${id}-password`}>Parolă</label>
+          <label htmlFor={`${id}-password`}>Password</label>
           <input
             id={`${id}-password`}
             type="password"
@@ -53,17 +55,17 @@ export default function RegisterModal({ onClose }) {
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          <label htmlFor={`${id}-role`}>Rol</label>
+          <label htmlFor={`${id}-role`}>Role</label>
           <select id={`${id}-role`} value={role} onChange={(e) => setRole(e.target.value)}>
-            <option value="MP">Membru proiect (MP)</option>
+            <option value="MP">Project member (MP)</option>
             <option value="TST">Tester (TST)</option>
           </select>
 
           <button type="submit" className="add-btn">
-            Creează cont
+            Create account
           </button>
           <button type="button" className="cancel-btn" onClick={onClose}>
-            Anulează
+            Cancel
           </button>
         </form>
       </div>

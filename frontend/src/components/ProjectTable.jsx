@@ -7,10 +7,10 @@ export default function ProjectTable() {
   const navigate = useNavigate();
 
   if (loading) {
-    return <p>Se încarcă proiectele...</p>;
+    return <p>Loading projects...</p>;
   }
   if (projects.length === 0) {
-    return <p>Nu exista proiecte inregistrate.</p>;
+    return <p>You have no projects yet. Create your first one below.</p>;
   }
 
   const getBugCountForProject = (projectId) =>
@@ -20,17 +20,15 @@ export default function ProjectTable() {
     navigate(`/projects/${pid}`)
   }
 
-
   return (
- 
     <table className="project-table">
       <thead>
         <tr>
-          <th>Nume proiect</th>
-          <th>Commit link</th>
+          <th>Project</th>
+          <th>Repository</th>
           <th>Owner</th>
-          <th>Echipă</th>
-          <th>Nr. bug-uri</th>
+          <th>Members</th>
+          <th>Bugs</th>
         </tr>
       </thead>
       <tbody>
@@ -38,7 +36,8 @@ export default function ProjectTable() {
           <tr key={p.id} onClick={() => handleProjectClick(p.id)} className="project-card">
             <td>{p.title}</td>
             <td>
-              <a href={p.commit_link} target="_blank" rel="noreferrer">
+              {/* stopPropagation: opening the repository should not also open the project page */}
+              <a href={p.commit_link} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
                 {p.commit_link}
               </a>
             </td>

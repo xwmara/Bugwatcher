@@ -1,24 +1,27 @@
 import { useContext, useState } from "react";
 import { AppContext } from "../context/AppContext";
 import { AuthContext } from "../context/AuthContext";
+import { useNotify } from "../context/NotificationContext";
+import { getErrorMessage } from "../api/client";
 import AddBugModal from "./AddBugModal";
 
 export default function ProjectsListForTester() {
   const { projects, addTesterToProject, bugs } = useContext(AppContext);
   const { user } = useContext(AuthContext);
+  const notify = useNotify();
 
   const [selectedProjectId, setSelectedProjectId] = useState(null);
   if (projects.length === 0) {
-    return <p>Nu exista proiecte momentan. Revino mai tarziu.</p>;
+    return <p>There are no projects yet. Please check back later.</p>;
   }
 
-  const handleJoin = (projectId) => {
-    addTesterToProject(projectId, user.email)
+  const handleJoin = (project) => {
+    addTesterToProject(project.id, user.email)
       .then(() => {
-        alert("Te-ai alaturat proiectului ca tester.");
+        notify(`You joined "${project.title}" as a tester.`);
       })
-      .catch(() => {
-        alert("Eroare la alaturarea la proiect. Încearcă din nou.");
+      .catch((err) => {
+        notify(getErrorMessage(err, "Could not join the project. Please try again."), "error");
       });
   };
 
@@ -35,34 +38,26 @@ export default function ProjectsListForTester() {
 
           return (
             <div key={p.id} className="tester-project-card">
-          <h4>{p.name || p.title}</h4>
-            <p><strong>Repo:</strong> {p.repo || p.commit_link}</p>
-            <p><strong>Owner:</strong> {p.Owner?.email || p.Owner?.name || "—"}</p>
-            <p><strong>Testeri:</strong> {p.testers?.length || 0}</p>
-              <p><strong>Bug-uri:</strong> {bugCount}</p>
+              <h4>{p.title}</h4>
+              <p><strong>Repository:</strong> {p.commit_link}</p>
+              <p><strong>Owner:</strong> {p.Owner?.email || p.Owner?.name || "—"}</p>
+              <p><strong>Testers:</strong> {p.testers?.length || 0}</p>
+              <p><strong>Bugs:</strong> {bugCount}</p>
 
-              {!isTester && (
-                <button className="btn primary" onClick={() => handleJoin(p.id)}>
-                  Alatura-te ca tester
-                </button>
-              )}
-
-              {isTester && (
+              {isTester ? (
                 <>
-                  <span className="tester-badge">Esti tester la acest proiect</span>
+                  <span className="tester-badge">You are a tester on this project</span>
                   <button className="btn primary" onClick={() => setSelectedProjectId(p.id)}>
-                    Raporteaza bug
+                    Report a bug
                   </button>
                 </>
-              )}
-
-              {!isTester && (
-                <button
-                  className="btn ghost"
-                  onClick={() => alert("Mai intai alatura-te ca tester, apoi poti raporta bug-uri.")}
-                >
-                  Raporteaza bug
-                </button>
+              ) : (
+                <>
+                  <button className="btn primary" onClick={() => handleJoin(p)}>
+                    Join as tester
+                  </button>
+                  <p className="muted">Join the project to report bugs.</p>
+                </>
               )}
             </div>
           );

@@ -20,6 +20,7 @@ export const BugPage = () => {
   const [project, setProject] = useState(null);
   const [teamMembers, setTeamMembers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [errorStatus, setErrorStatus] = useState(null);
 
   const [selectedUserId, setSelectedUserId] = useState("");
   const [status, setStatus] = useState("");
@@ -44,11 +45,13 @@ export const BugPage = () => {
         const mpMembers = (projRes.data.Users || []).filter(u => u.role === "MP");
         setTeamMembers(mpMembers);
       } catch (err) {
-        console.error("Error fetching bug:", err);
+        setBug(null);
+        setErrorStatus(err.response?.status ?? "network");
       } finally {
         setLoading(false);
       }
     };
+    setErrorStatus(null);
     fetchBug();
   }, [id]);
 
@@ -92,7 +95,14 @@ export const BugPage = () => {
   };
 
   if (loading) return <div className="bug-page-container">Loading bug...</div>;
-  if (!bug) return <div className="bug-page-container">Bug not found.</div>;
+  if (errorStatus === 401) return <div className="bug-page-container">Please log in to see this bug.</div>;
+  if (!bug) {
+    return (
+      <div className="bug-page-container">
+        {errorStatus === 404 || errorStatus === 400 ? "Bug not found." : "Could not load the bug. Please try again."}
+      </div>
+    );
+  }
 
   return (
     <div className="bug-page-container">

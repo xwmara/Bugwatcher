@@ -26,8 +26,8 @@ function renderLogin() {
 async function fillAndSubmit(email = 'ana@example.com', password = 'secret-password') {
   const user = userEvent.setup();
   await user.type(screen.getByLabelText('Email'), email);
-  await user.type(screen.getByLabelText('Parolă'), password);
-  await user.click(screen.getByRole('button', { name: 'Login' }));
+  await user.type(screen.getByLabelText('Password'), password);
+  await user.click(screen.getByRole('button', { name: 'Log in' }));
 }
 
 describe('LoginModal', () => {
@@ -53,7 +53,7 @@ describe('LoginModal', () => {
 
     await fillAndSubmit();
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Email sau parolă incorecte.');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Incorrect email or password.');
     expect(loginUser).not.toHaveBeenCalled();
     expect(onClose).not.toHaveBeenCalled();
   });
@@ -73,18 +73,18 @@ describe('LoginModal', () => {
 
     await fillAndSubmit();
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('A apărut o eroare la autentificare.');
+    expect(await screen.findByRole('alert')).toHaveTextContent('Could not log in. Please try again.');
   });
 
   it('does not send the form while fields are empty', async () => {
     renderLogin();
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Login' }));
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Log in' }));
     expect(api.post).not.toHaveBeenCalled();
   });
 
   it('closes when Cancel is clicked', async () => {
     const { onClose } = renderLogin();
-    await userEvent.setup().click(screen.getByRole('button', { name: 'Anulează' }));
+    await userEvent.setup().click(screen.getByRole('button', { name: 'Cancel' }));
     expect(onClose).toHaveBeenCalled();
     expect(api.post).not.toHaveBeenCalled();
   });

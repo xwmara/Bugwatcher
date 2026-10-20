@@ -87,7 +87,7 @@ export const AppProvider = ({ children }) => {
       });
   };
 
-  // 🔹 TST ➜ raportează bug
+  // A tester reports a bug
   const addBug = (bug) => {
     // Persist bug to backend
     return api.post("/bugs", {

@@ -19,10 +19,10 @@ export default function LoginModal({ onClose }) {
       onClose();
     } catch (err) {
       if (err.response?.status === 401) {
-        setError("Email sau parolă incorecte.");
+        setError("Incorrect email or password.");
       } else {
         // e.g. the rate limit message, or no connection to the server
-        setError(getErrorMessage(err, "A apărut o eroare la autentificare."));
+        setError(getErrorMessage(err, "Could not log in. Please try again."));
       }
     }
   };
@@ -30,19 +30,19 @@ export default function LoginModal({ onClose }) {
   return (
     <div className="modal-overlay">
       <div className="modal">
-        <h2>Autentificare</h2>
+        <h2>Log in</h2>
 
-        {error && <p role="alert" style={{ color: "red" }}>{error}</p>}
+        {error && <p role="alert" className="form-error">{error}</p>}
 
         <form onSubmit={handleLogin} className="login-form">
           <label htmlFor={`${id}-email`}>Email</label>
           <input id={`${id}-email`} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
 
-          <label htmlFor={`${id}-password`}>Parolă</label>
+          <label htmlFor={`${id}-password`}>Password</label>
           <input id={`${id}-password`} type="password" required value={password} onChange={(e) => setPassword(e.target.value)} />
 
-          <button type="submit" className="add-btn">Login</button>
-          <button type="button" className="cancel-btn" onClick={onClose}>Anulează</button>
+          <button type="submit" className="add-btn">Log in</button>
+          <button type="button" className="cancel-btn" onClick={onClose}>Cancel</button>
         </form>
       </div>
     </div>

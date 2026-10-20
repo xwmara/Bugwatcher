@@ -6,21 +6,21 @@ import ProjectsListForTester from "../../components/ProjectsListForTester";
 import BugListForMP from "../../components/BugListForMP";
 import './home.css';
 
-
 export default function Home() {
   const { user } = useContext(AuthContext);
   const [showAddProject, setShowAddProject] = useState(false);
 
-  //  User NEAUTENTIFICAT
+  // Not logged in
   if (!user) {
     return (
       <div className="not-logged">
-        <h2>Creează un cont sau autentifică-te pentru a vedea proiectele.</h2>
+        <h2>Track bugs across your team&apos;s projects.</h2>
+        <p className="muted">Log in or create an account to see your projects.</p>
       </div>
     );
   }
 
-  // MP — Membru de proiect
+  // MP: project member
   if (user.role === "MP") {
     return (
       <div className="mp-dashboard">
@@ -31,7 +31,7 @@ export default function Home() {
           className="add-btn"
           onClick={() => setShowAddProject(true)}
         >
-          Adaugă proiect
+          New project
         </button>
 
         {showAddProject && (
@@ -43,16 +43,15 @@ export default function Home() {
     );
   }
 
-  // TST — Tester
+  // TST: tester
   if (user.role === "TST") {
     return (
       <div className="tst-dashboard">
-        <h2>Proiecte disponibile</h2>
+        <h2>Available projects</h2>
         <ProjectsListForTester />
       </div>
     );
   }
-
 
   return null;
 }
