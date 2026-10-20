@@ -1,22 +1,7 @@
 import db from "../models/index.js";
+import { isValidRepoLink } from "../utils/repoLink.js";
 
 const { Project, User, Team, Bug } = db;
-
-// Code hosting sites accepted for a project's commit link
-const ALLOWED_REPO_HOSTS = ["github.com", "gitlab.com", "bitbucket.org"];
-
-// Checks only the format of the link. The server does not open the link itself:
-// fetching any URL a user sends would let them make the server call internal
-// addresses (a security issue called SSRF).
-const isValidRepoLink = (link) => {
-    if (typeof link !== "string") return false;
-    try {
-        const url = new URL(link.trim());
-        return url.protocol === "https:" && ALLOWED_REPO_HOSTS.includes(url.hostname.replace(/^www\./, ""));
-    } catch {
-        return false;
-    }
-};
 
 /**
  * Un tester (TST) se alătură unui proiect

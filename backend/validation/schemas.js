@@ -2,6 +2,7 @@
 // The validate() middleware checks requests against them before the controller runs.
 // Business rules (permissions, "does this user exist?", password strength) stay in the controllers.
 import { z } from 'zod';
+import { isValidRepoLink } from '../utils/repoLink.js';
 
 // Allowed values, same as the ENUM columns in the database
 export const ROLES = ['MP', 'TST'];
@@ -13,6 +14,13 @@ export const STATUSES = ['OPEN', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'];
 const id = (name) => z.coerce.number({ error: `Invalid ${name}.` }).int({ error: `Invalid ${name}.` }).positive({ error: `Invalid ${name}.` });
 const oneOf = (field, values) => z.enum(values, { error: `Invalid ${field}. Use one of: ${values.join(', ')}.` });
 const requiredText = (message) => z.string({ error: message }).trim().min(1, { error: message });
+// Optional commit link on GitHub, GitLab or Bitbucket; an empty field is stored as null
+const optionalRepoLink = (field) => z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() === '' ? null : value),
+    z.string({ error: `${field} must be text.` }).trim()
+        .refine(isValidRepoLink, { error: `${field} must be an https:// link to GitHub, GitLab or Bitbucket.` })
+        .nullable()
+).optional();
 // " Ana@Mail.com " is accepted and stored as "ana@mail.com"
 const emailField = () => z.string({ error: 'Email invalid.' }).trim().toLowerCase().pipe(z.email({ error: 'Email invalid.' }));
 
@@ -61,6 +69,7 @@ export const createBugBody = z.object({
     priority: oneOf('priority', PRIORITIES),
     projectId: id('project id'),
     assignedUserId: id('assigned user id').nullable().optional(),
+    commitLink: optionalRepoLink('Commit link'),
 });
 
 export const updateBugBody = z.object({
@@ -70,4 +79,5 @@ export const updateBugBody = z.object({
     priority: oneOf('priority', PRIORITIES).optional(),
     status: oneOf('status', STATUSES).optional(),
     assignedUserId: id('assigned user id').nullable().optional(), // null unassigns the bug
+    resolutionCommit: optionalRepoLink('Resolution commit'),
 });

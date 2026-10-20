@@ -13,7 +13,7 @@ const { Bug, User, Project } = db;
 export const createBug = async (req, res, next) => {
 
     try {
-        const { title, description, severity, priority, projectId, assignedUserId } = req.body;
+        const { title, description, severity, priority, projectId, assignedUserId, commitLink } = req.body;
         const requesterId = req.user?.id;
 
         if (!requesterId) return res.status(403).json({ message: "Unauthorized." });
@@ -51,7 +51,8 @@ export const createBug = async (req, res, next) => {
             status,
             projectId,
             assignedUserId: assignedUserId || null,
-            reporterId: requesterId
+            reporterId: requesterId,
+            commitLink: commitLink ?? null
         });
 
         return res.status(201).json(newBug);
@@ -107,7 +108,7 @@ export const getBugsByProjectId = async (req, res, next) => {
 export const updateBug = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { title, description, severity, priority, status, assignedUserId } = req.body;
+        const { title, description, severity, priority, status, assignedUserId, resolutionCommit } = req.body;
 
         const bug = await Bug.findByPk(id);
         if (!bug) {
@@ -124,8 +125,19 @@ export const updateBug = async (req, res, next) => {
         // Only the fields sent in the request are changed.
         // Their format and allowed values are checked by validate(updateBugBody).
         const changes = {};
-        for (const [field, value] of Object.entries({ title, description, severity, priority, status })) {
+        for (const [field, value] of Object.entries({ title, description, severity, priority, status, resolutionCommit })) {
             if (value !== undefined) changes[field] = value; // description may be "" to clear it
+        }
+
+        // Resolving a bug requires the commit that fixed it
+        const newStatus = changes.status ?? bug.status;
+        const newResolutionCommit = changes.resolutionCommit !== undefined ? changes.resolutionCommit : bug.resolutionCommit;
+        if (newStatus === "RESOLVED" && !newResolutionCommit) {
+            return res.status(400).json({ message: "Add the commit that fixed the bug to mark it as RESOLVED." });
+        }
+        // Reopening a bug removes the old fix
+        if (changes.status === "OPEN" || changes.status === "IN_PROGRESS") {
+            changes.resolutionCommit = null;
         }
 
         if (assignedUserId === null) {

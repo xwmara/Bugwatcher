@@ -100,6 +100,45 @@ describe('PUT /bugs/:id (update and assign)', () => {
     });
 });
 
+describe('commit links', () => {
+    it('stores the commit link sent with a bug report', async () => {
+        const { tester, project } = await createProjectWithBug();
+        const commitLink = 'https://github.com/xwmara/Bugwatcher/commit/abc123';
+        const res = await tester.agent.post('/bugs')
+            .send({ title: 'Typo', severity: 'Low', priority: 'Low', projectId: project.id, commitLink });
+        expect(res.status).toBe(201);
+        expect(res.body.commitLink).toBe(commitLink);
+    });
+
+    it('stores an empty commit link as null and rejects links outside GitHub/GitLab/Bitbucket', async () => {
+        const { tester, project } = await createProjectWithBug();
+        const bug = { title: 'Typo', severity: 'Low', priority: 'Low', projectId: project.id };
+        expect((await tester.agent.post('/bugs').send({ ...bug, commitLink: '' })).body.commitLink).toBeNull();
+        expect((await tester.agent.post('/bugs').send({ ...bug, commitLink: 'https://evil.example/x' })).status).toBe(400);
+    });
+
+    it('requires the fixing commit to mark a bug as RESOLVED', async () => {
+        const { owner, bug } = await createProjectWithBug();
+        const withoutCommit = await owner.agent.put(`/bugs/${bug.id}`).send({ status: 'RESOLVED' });
+        expect(withoutCommit.status).toBe(400);
+
+        const fix = 'https://github.com/xwmara/Bugwatcher/commit/f1x';
+        await owner.agent.put(`/bugs/${bug.id}`).send({ status: 'RESOLVED', resolutionCommit: fix }).expect(200);
+        expect((await owner.agent.get(`/bugs/${bug.id}`)).body).toMatchObject({ status: 'RESOLVED', resolutionCommit: fix });
+    });
+
+    it('can close a resolved bug and clears the fix when the bug is reopened', async () => {
+        const { owner, bug } = await createProjectWithBug();
+        const fix = 'https://gitlab.com/group/repo/-/commit/f1x';
+        await owner.agent.put(`/bugs/${bug.id}`).send({ status: 'RESOLVED', resolutionCommit: fix }).expect(200);
+        await owner.agent.put(`/bugs/${bug.id}`).send({ status: 'CLOSED' }).expect(200);
+        expect((await owner.agent.get(`/bugs/${bug.id}`)).body.resolutionCommit).toBe(fix);
+
+        await owner.agent.put(`/bugs/${bug.id}`).send({ status: 'OPEN' }).expect(200);
+        expect((await owner.agent.get(`/bugs/${bug.id}`)).body).toMatchObject({ status: 'OPEN', resolutionCommit: null });
+    });
+});
+
 describe('DELETE /bugs/:id', () => {
     it('only lets the project owner delete a bug', async () => {
         const { owner, tester, bug } = await createProjectWithBug();

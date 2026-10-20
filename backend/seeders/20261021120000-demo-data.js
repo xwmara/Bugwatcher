@@ -124,7 +124,8 @@ export async function up(queryInterface) {
         ), { transaction });
 
         // Bugs
-        await queryInterface.bulkInsert('Bugs', BUGS.map(([project, reporter, assignee, title, description, severity, priority, status]) => ({
+        const repoOf = (project) => PROJECTS.find((p) => p.key === project).commit_link;
+        await queryInterface.bulkInsert('Bugs', BUGS.map(([project, reporter, assignee, title, description, severity, priority, status], i) => ({
             title,
             description,
             severity,
@@ -133,6 +134,9 @@ export async function up(queryInterface) {
             projectId: projectId[project],
             reporterId: userId[reporter],
             assignedUserId: assignee ? userId[assignee] : null,
+            // Example commit links (the demo repositories are fictional)
+            commitLink: i % 2 === 0 ? `${repoOf(project)}/commit/${(1000 + i).toString(16)}a7c2e` : null,
+            resolutionCommit: status === 'RESOLVED' ? `${repoOf(project)}/commit/${(2000 + i).toString(16)}f91b0` : null,
             ...stamps,
         })), { transaction });
     });
