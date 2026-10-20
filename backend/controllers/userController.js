@@ -152,23 +152,31 @@ export const updateUser = async (req, res, next) => {
     const { id } = req.params;
     const { email, role } = req.body;
 
+    // Users can only change their own account
+    if (Number(id) !== req.user.id) {
+      return res.status(403).json({ message: "You can only update your own account." });
+    }
+
     const user = await User.findByPk(id);
     if (!user) {
       return res.status(404).json({ message: "User not found." });
+    }
+
+    // The role is chosen at registration; otherwise a tester could make themselves an MP
+    if (role !== undefined && role !== user.role) {
+      return res.status(403).json({ message: "Role cannot be changed." });
     }
 
     if (email !== undefined) {
       if (!email || !email.includes("@")) {
         return res.status(400).json({ message: "Email invalid." });
       }
-      user.email = email.toLowerCase();
-    }
-
-    if (role !== undefined) {
-      if (role !== "MP" && role !== "TST") {
-        return res.status(400).json({ message: "Role invalid." });
+      const normalizedEmail = email.trim().toLowerCase();
+      const emailTaken = await User.findOne({ where: { email: normalizedEmail } });
+      if (emailTaken && emailTaken.id !== user.id) {
+        return res.status(409).json({ message: "User with this email already exists." });
       }
-      user.role = role;
+      user.email = normalizedEmail;
     }
 
     await user.save();
@@ -209,6 +217,11 @@ export const deleteUser = async (req, res, next) => {
   try {
     const { id } = req.params;
 
+    // Users can only delete their own account
+    if (Number(id) !== req.user.id) {
+      return res.status(403).json({ message: "You can only delete your own account." });
+    }
+
     const user = await User.findByPk(id);
     if (!user) {
       return res.status(404).json({ message: "User not found." });
@@ -216,6 +229,9 @@ export const deleteUser = async (req, res, next) => {
 
     await user.destroy();
 
+    // The account no longer exists, so end the session too
+    const { maxAge, ...clearOptions } = accessOptions;
+    res.clearCookie("accessToken", clearOptions);
     return res.status(204).send();
   } catch (err) {
     return next(err);

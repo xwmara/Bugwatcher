@@ -1,4 +1,5 @@
 import db from "../models/index.js";
+import { canManageProject } from "../utils/permissions.js";
 
 const { Bug, User, Project } = db;
 
@@ -117,10 +118,22 @@ export const updateBug = async (req, res, next) => {
             return res.status(404).json({ message: "Bug not found." });
         }
 
+        // Only the project owner (or a member of the owning team) can change a bug
+        const project = await Project.findByPk(bug.projectId);
+        const requester = await User.findByPk(req.user.id);
+        if (!canManageProject(requester, project)) {
+            return res.status(403).json({ message: "Only the project owner can update this bug." });
+        }
+
         if (assignedUserId) {
             const userExists = await User.findByPk(assignedUserId);
             if (!userExists) {
                 return res.status(404).json({ message: "New assigned user not found." });
+            }
+            // Same rule as the bug page: bugs are assigned to MP members of the project
+            const isMember = await project.hasUser(userExists);
+            if (userExists.role !== "MP" || !isMember) {
+                return res.status(400).json({ message: "Bugs can only be assigned to MP members of the project." });
             }
         }
 
@@ -152,6 +165,13 @@ export const deleteBug = async (req, res, next) => {
         const bug = await Bug.findByPk(id);
         if (!bug) {
             return res.status(404).json({ message: "Bug not found." });
+        }
+
+        // Only the project owner (or a member of the owning team) can delete a bug
+        const project = await Project.findByPk(bug.projectId);
+        const requester = await User.findByPk(req.user.id);
+        if (!canManageProject(requester, project)) {
+            return res.status(403).json({ message: "Only the project owner can delete this bug." });
         }
 
         await bug.destroy();
