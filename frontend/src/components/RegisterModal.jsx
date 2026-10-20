@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useId } from "react";
 import { api, getErrorMessage } from "../api/client";
 
 export default function RegisterModal({ onClose }) {
@@ -6,6 +6,7 @@ export default function RegisterModal({ onClose }) {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("TST"); // default tester
   const [error, setError] = useState("");
+  const id = useId(); // unique ids that link each <label> to its field
 
   const handleRegister = async (e) => {
     e.preventDefault();
@@ -31,27 +32,29 @@ export default function RegisterModal({ onClose }) {
       <div className="modal">
         <h2>Înregistrare</h2>
 
-        {error && <p style={{ color: "red" }}>{error}</p>}
+        {error && <p role="alert" style={{ color: "red" }}>{error}</p>}
 
         <form onSubmit={handleRegister} className="register-form">
-          <label>Email</label>
+          <label htmlFor={`${id}-email`}>Email</label>
           <input
+            id={`${id}-email`}
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
 
-          <label>Parolă</label>
+          <label htmlFor={`${id}-password`}>Parolă</label>
           <input
+            id={`${id}-password`}
             type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          <label>Rol</label>
-          <select value={role} onChange={(e) => setRole(e.target.value)}>
+          <label htmlFor={`${id}-role`}>Rol</label>
+          <select id={`${id}-role`} value={role} onChange={(e) => setRole(e.target.value)}>
             <option value="MP">Membru proiect (MP)</option>
             <option value="TST">Tester (TST)</option>
           </select>

@@ -1,4 +1,4 @@
-import { useState, useContext } from "react";
+import { useState, useContext, useId } from "react";
 import { AppContext } from "../context/AppContext";
 import { AuthContext } from "../context/AuthContext";
 
@@ -11,6 +11,7 @@ export default function AddBugModal({ projectId, onClose }) {
   const [description, setDescription] = useState("");
   const [commitLink, setCommitLink] = useState("");
   const [title, setTitle] = useState("");
+  const id = useId(); // unique ids that link each <label> to its field
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -37,8 +38,9 @@ export default function AddBugModal({ projectId, onClose }) {
 
         <form onSubmit={handleSubmit} className="bug-form">
 
-          <label>Titlu</label>
+          <label htmlFor={`${id}-title`}>Titlu</label>
           <input
+            id={`${id}-title`}
             type="text"
             required
             value={title}
@@ -46,31 +48,33 @@ export default function AddBugModal({ projectId, onClose }) {
             placeholder="Scurt titlu al bug-ului"
           />
 
-          <label>Severitate</label>
-          <select value={severity} onChange={(e) => setSeverity(e.target.value)}>
+          <label htmlFor={`${id}-severity`}>Severitate</label>
+          <select id={`${id}-severity`} value={severity} onChange={(e) => setSeverity(e.target.value)}>
             <option>Low</option>
             <option>Medium</option>
             <option>High</option>
             <option>Critical</option>
           </select>
 
-          <label>Prioritate</label>
-          <select value={priority} onChange={(e) => setPriority(e.target.value)}>
+          <label htmlFor={`${id}-priority`}>Prioritate</label>
+          <select id={`${id}-priority`} value={priority} onChange={(e) => setPriority(e.target.value)}>
             <option>Low</option>
             <option>Medium</option>
             <option>High</option>
           </select>
 
-          <label>Descriere</label>
+          <label htmlFor={`${id}-description`}>Descriere</label>
           <textarea
+            id={`${id}-description`}
             required
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Descrie problema..."
           />
 
-          <label>Link commit asociat (opțional)</label>
+          <label htmlFor={`${id}-commit`}>Link commit asociat (opțional)</label>
           <input
+            id={`${id}-commit`}
             type="text"
             value={commitLink}
             onChange={(e) => setCommitLink(e.target.value)}
