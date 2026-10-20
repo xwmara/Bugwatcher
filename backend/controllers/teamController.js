@@ -3,10 +3,10 @@ import db from '../models/index.js';
 const { Team, User } = db;
 
 /**
- * Creează o echipă nouă
+ * Creates a new team (MP only); the creator becomes a member
  * @route POST /teams
  * @param {Object} req.body - {name, description}
- * @returns {Object} echipa creată
+ * @returns {Object} the created team
  */
 
 export const createTeam = async (req, res, next) => {
@@ -52,9 +52,9 @@ export const createTeam = async (req, res, next) => {
 }
 
 /**
- * Ia toate echipele
+ * Gets all teams
  * @route GET /teams
- * @returns {Object[]} lista de echipe
+ * @returns {Object[]} list of teams
  */
 
 export const getAllTeams = async (req, res, next) => {
@@ -74,9 +74,9 @@ export const getAllTeams = async (req, res, next) => {
 }
 
 /**
- * Obține echipa curentă a utilizatorului autentificat
+ * Gets the logged-in user's team
  * @route GET /teams/my
- * @returns {Object} echipa utilizatorului
+ * @returns {Object} the user's team
  */
 export const getMyTeam = async (req, res, next) => {
     try {
@@ -103,10 +103,10 @@ export const getMyTeam = async (req, res, next) => {
 };
 
 /**
- * Invită un utilizator în echipa curentă
+ * Adds another MP to the current user's team
  * @route POST /teams/invite
  * @param {Object} req.body - {email}
- * @returns {Object} mesaj de succes
+ * @returns {Object} success message
  */
 export const inviteToTeam = async (req, res, next) => {
     try {
@@ -151,9 +151,9 @@ export const inviteToTeam = async (req, res, next) => {
 };
 
 /**
- * Părăsește echipa curentă
+ * Leaves the current team
  * @route POST /teams/leave
- * @returns {Object} mesaj de succes
+ * @returns {Object} success message
  */
 export const leaveTeam = async (req, res, next) => {
     try {

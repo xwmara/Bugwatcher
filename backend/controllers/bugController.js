@@ -4,10 +4,10 @@ import { canManageProject } from "../utils/permissions.js";
 const { Bug, User, Project } = db;
 
 /**
- * Creează un bug nou
+ * Creates a new bug (reported by the logged-in user)
  * @route POST /bugs
  * @param {Object} req.body - {title, description, severity, priority, projectId, assignedUserId}
- * @returns {Object} bug creat
+ * @returns {Object} the created bug
  */
 
 export const createBug = async (req, res, next) => {
@@ -63,10 +63,10 @@ export const createBug = async (req, res, next) => {
 }
 
 /**
- * Obține toate bug-urile unui proiect
+ * Gets all bugs of a project
  * @route GET /bugs/project/:projectId
- * @param {string} projectId - ID-ul proiectului
- * @returns {Object[]} lista de bug-uri asociate proiectului
+ * @param {string} projectId - project ID
+ * @returns {Object[]} the bugs of the project
  */
 export const getBugsByProjectId = async (req, res, next) => {
     try {
@@ -99,11 +99,11 @@ export const getBugsByProjectId = async (req, res, next) => {
 };
 
 /**
- * Actualizează un bug existent
+ * Updates a bug (project owner or a member of the owning team only)
  * @route PUT /bugs/:id
- * @param {string} id - ID-ul bug-ului de actualizat
+ * @param {string} id - ID of the bug to update
  * @param {Object} req.body - {title, description, severity, priority, status, assignedUserId}
- * @returns {Object} bug actualizat
+ * @returns {Object} the updated bug
  */
 export const updateBug = async (req, res, next) => {
     try {
@@ -164,10 +164,10 @@ export const updateBug = async (req, res, next) => {
 };
 
 /**
- * Șterge un bug
+ * Deletes a bug (project owner or a member of the owning team only)
  * @route DELETE /bugs/:id
- * @param {string} id - ID-ul bug-ului de șters
- * @returns {Object} mesaj de succes
+ * @param {string} id - ID of the bug to delete
+ * @returns {Object} success message
  */
 export const deleteBug = async (req, res, next) => {
     try {
@@ -193,10 +193,10 @@ export const deleteBug = async (req, res, next) => {
 };
 
 /**
- * Obține un bug după ID
+ * Gets a bug by ID
  * @route GET /bugs/:id
- * @param {string} id - ID-ul bug-ului
- * @returns {Object} bug-ul găsit, cu reporter și assignedUser incluse
+ * @param {string} id - bug ID
+ * @returns {Object} the bug, with reporter and assignedUser included
  */
 export const getBugById = async (req, res, next) => {
     try {

@@ -7,10 +7,10 @@ import { accessOptions } from "../utils/cookiesConfig.js";
 const { User, Project, Team } = db;
 
 /**
- * Înregistrează un user (signup)
+ * Registers a new user (sign up)
  * @route POST /users/register
  * @param {Object} req.body - {email, password, role}
- * @returns {Object} user creat
+ * @returns {Object} the created user (without password)
  */
 
 export const registerUser = async (req, res, next) => {
@@ -55,10 +55,10 @@ export const registerUser = async (req, res, next) => {
 }
 
    /**
-   * Loghează un user (login)
+   * Logs a user in and sets the accessToken cookie
    * @route POST /users/login
    * @param {Object} req.body - {email, password}
-   * @returns {Object} user logat
+   * @returns {Object} the logged-in user (without password)
    */
 
   export const loginUser = async (req, res, next) => {
@@ -102,10 +102,10 @@ export const registerUser = async (req, res, next) => {
   }
 
   /**
-  * Ia un user după ID
+  * Gets a user by ID
   * @route GET /users/:id
-  * @param {string} id - ID-ul userului
-  * @returns {Object} userul găsit
+  * @param {string} id - user ID
+  * @returns {Object} the user (without password)
   */
 
 export const getUserById = async (req, res, next) => {
@@ -128,11 +128,11 @@ export const getUserById = async (req, res, next) => {
 };
 
   /**
-  * Actualizează un user după ID
+  * Updates your own account (email only; the role cannot change)
   * @route PUT /users/:id
-  * @param {string} id - ID-ul userului
+  * @param {string} id - user ID
   * @param {Object} req.body - {email, role}
-  * @returns {Object} user actualizat
+  * @returns {Object} the updated user
   */
 
 export const updateUser = async (req, res, next) => {
@@ -176,9 +176,9 @@ export const updateUser = async (req, res, next) => {
 };
 
 /**
- * Loghează un user (logout)
+ * Logs the user out (clears the cookie)
  * @route POST /users/logout
- * @returns {Object} mesaj de succes
+ * @returns {Object} success message
  */
 export const logoutUser = async (req, res, next) => {
   try {
@@ -193,10 +193,10 @@ export const logoutUser = async (req, res, next) => {
 }
 
 /**
- * Șterge un user după ID
+ * Deletes your own account
  * @route DELETE /users/:id
- * @param {string} id - ID-ul userului
- * @returns {void} fara continut(204 No Content)
+ * @param {string} id - user ID
+ * @returns {void} no content (204 No Content)
  */
 export const deleteUser = async (req, res, next) => {
   try {
@@ -224,9 +224,9 @@ export const deleteUser = async (req, res, next) => {
 };
 
 /**
- * Recuperează datele userului logat
+ * Gets the logged-in user (restores the session after a page reload)
  * @route GET /users/me
- * @returns {Object} datele userului logat
+ * @returns {Object} the logged-in user
  */
 
 export const restoreUser = async (req, res, next) => {
@@ -252,9 +252,9 @@ export const restoreUser = async (req, res, next) => {
 }
 
 /**
- * Ia proiectele unui user
- * @route GET /users/projects
- * @returns {Object[]} lista de proiecte
+ * Gets the projects for the home page: an MP sees their projects, a tester sees all projects
+ * @route GET /users/getUserProjects
+ * @returns {Object[]} list of projects
  */
 export const getUserProjects = async (req, res, next) => {
   try {

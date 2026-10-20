@@ -4,7 +4,7 @@ import { isValidRepoLink } from "../utils/repoLink.js";
 const { Project, User, Team, Bug } = db;
 
 /**
- * Un tester (TST) se alătură unui proiect
+ * A tester (TST) joins a project
  * @route POST /projects/:id/join
  */
 export const joinProject = async (req, res, next) => {
@@ -39,10 +39,10 @@ export const joinProject = async (req, res, next) => {
 }
 
 /**
- * Creează un proiect nou
+ * Creates a new project (MP only)
  * @route POST /projects
  * @param {Object} req.body - {title, commit_link}
- * @returns {Object} un obiect care contine mesajul de succes, proiectul creat și owner-ul proiectului
+ * @returns {Object} success message, the created project and its owner
  */
 
 export const createProject = async (req, res, next) => {
@@ -115,9 +115,9 @@ export const createProject = async (req, res, next) => {
 }
 
 /**
- * Ia toate proiectele
+ * Gets all projects
  * @route GET /projects
- * @returns {Object[]} lista de proiecte
+ * @returns {Object[]} list of projects
  */
 
 export const getAllProjects = async (req, res, next) => {
@@ -130,9 +130,9 @@ export const getAllProjects = async (req, res, next) => {
 }
 
 /**
- * Ia un proiect după ID
+ * Gets a project by ID
  * @route GET /projects/:id
- * @returns {Object} proiectul, populat cu Users si Bugs.
+ * @returns {Object} the project with its Users, Bugs and Owner
  */
 
 
