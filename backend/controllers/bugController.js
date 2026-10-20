@@ -3,11 +3,6 @@ import { canManageProject } from "../utils/permissions.js";
 
 const { Bug, User, Project } = db;
 
-// Allowed values, same as the ENUM columns in the Bugs table
-const SEVERITIES = ["Low", "Medium", "High", "Critical"];
-const PRIORITIES = ["Low", "Medium", "High"];
-const STATUSES = ["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"];
-
 /**
  * Creează un bug nou
  * @route POST /bugs
@@ -22,11 +17,7 @@ export const createBug = async (req, res, next) => {
         const requesterId = req.user?.id;
 
         if (!requesterId) return res.status(403).json({ message: "Unauthorized." });
-
-        // required fields
-        if (!title || title.trim() === "" || !projectId || !severity || !priority) {
-            return res.status(400).json({ message: "Missing information in req.body" });
-        }
+        // Required fields and allowed values are checked by validate(createBugBody)
 
         const project = await Project.findByPk(projectId);
         if (!project) {
@@ -130,28 +121,11 @@ export const updateBug = async (req, res, next) => {
             return res.status(403).json({ message: "Only the project owner can update this bug." });
         }
 
-        // Only the fields sent in the request are changed
+        // Only the fields sent in the request are changed.
+        // Their format and allowed values are checked by validate(updateBugBody).
         const changes = {};
-
-        if (title !== undefined) {
-            if (typeof title !== "string" || title.trim() === "") {
-                return res.status(400).json({ message: "Title cannot be empty." });
-            }
-            changes.title = title.trim();
-        }
-        if (description !== undefined) {
-            if (typeof description !== "string") {
-                return res.status(400).json({ message: "Description must be text." });
-            }
-            changes.description = description; // may be "" to clear it
-        }
-        const enumFields = { severity: [severity, SEVERITIES], priority: [priority, PRIORITIES], status: [status, STATUSES] };
-        for (const [field, [value, allowed]] of Object.entries(enumFields)) {
-            if (value === undefined) continue;
-            if (!allowed.includes(value)) {
-                return res.status(400).json({ message: `Invalid ${field}. Use one of: ${allowed.join(", ")}.` });
-            }
-            changes[field] = value;
+        for (const [field, value] of Object.entries({ title, description, severity, priority, status })) {
+            if (value !== undefined) changes[field] = value; // description may be "" to clear it
         }
 
         if (assignedUserId === null) {

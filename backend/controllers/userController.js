@@ -15,24 +15,14 @@ const { User, Project, Team } = db;
 
 export const registerUser = async (req, res, next) => {
   try {
+    // Format of email, password and role is checked by validate(registerBody)
     const {email, password, role} = req.body;
-    if (!email || !email.includes("@")) {
-      return res.status(400).json({message: "Email invalid."});
-    }
-    
-    if (!password) {
-      return res.status(400).json({message: "Password is required."});
-    }
     const passStrength = zxcvbn(password);
-    
+
     if (passStrength.score < 2) {
       return res.status(400).json({message: "Password too weak."});
     }
-    
-    if (role && role !== "MP" && role !== "TST") {
-        return res.status(400).json({message: "Role invalid. Use MP or TST."});
-    }
-    
+
     const normalizedEmail = email.trim().toLowerCase();
     const existingUser = await User.findOne(
       {where: {
@@ -73,11 +63,9 @@ export const registerUser = async (req, res, next) => {
 
   export const loginUser = async (req, res, next) => {
     try {
+      // Required fields are checked by validate(loginBody)
       const { email, password } = req.body;
-      if (!email || !password) {
-        return res.status(400).json({message: "Email and password are required."});
-      }
-      
+
       const normalizedEmail = email.trim().toLowerCase();
 
       let existingUser = await User.findOne({
@@ -168,9 +156,6 @@ export const updateUser = async (req, res, next) => {
     }
 
     if (email !== undefined) {
-      if (!email || !email.includes("@")) {
-        return res.status(400).json({ message: "Email invalid." });
-      }
       const normalizedEmail = email.trim().toLowerCase();
       const emailTaken = await User.findOne({ where: { email: normalizedEmail } });
       if (emailTaken && emailTaken.id !== user.id) {

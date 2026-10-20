@@ -18,9 +18,6 @@ export const createTeam = async (req, res, next) => {
             return res.status(403).json({ message: "Unauthorized." });
         }
 
-        if (!name || name.trim() === "") {
-            return res.status(400).json({ message: "Team name is required." });
-        }
 
         const user = await User.findByPk(userId);
         if (!user) {
@@ -117,7 +114,6 @@ export const inviteToTeam = async (req, res, next) => {
         if (!inviterId) return res.status(403).json({ message: "Unauthorized." });
 
         const { email } = req.body;
-        if (!email) return res.status(400).json({ message: "Email is required." });
 
         const inviter = await User.findByPk(inviterId);
         if (!inviter) return res.status(404).json({ message: "Inviter not found." });

@@ -69,10 +69,7 @@ export const createProject = async (req, res, next) => {
     try {
         const { title, commit_link } = req.body;
         const id = req.user.id;
-        
-        if (!title || title.trim() === "") {
-            return res.status(400).json({ message: "Project title is required." });
-        }
+
         if (!id) {
             return res.status(403).json({ message: "Forbidden." });
         }
