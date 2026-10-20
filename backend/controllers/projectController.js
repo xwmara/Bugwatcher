@@ -1,9 +1,22 @@
 import db from "../models/index.js";
-import axios from "axios";
-
-
 
 const { Project, User, Team, Bug } = db;
+
+// Code hosting sites accepted for a project's commit link
+const ALLOWED_REPO_HOSTS = ["github.com", "gitlab.com", "bitbucket.org"];
+
+// Checks only the format of the link. The server does not open the link itself:
+// fetching any URL a user sends would let them make the server call internal
+// addresses (a security issue called SSRF).
+const isValidRepoLink = (link) => {
+    if (typeof link !== "string") return false;
+    try {
+        const url = new URL(link.trim());
+        return url.protocol === "https:" && ALLOWED_REPO_HOSTS.includes(url.hostname.replace(/^www\./, ""));
+    } catch {
+        return false;
+    }
+};
 
 /**
  * Un tester (TST) se alătură unui proiect
@@ -75,16 +88,10 @@ export const createProject = async (req, res, next) => {
         const team = await userExists.getTeam();
         let ownerId, ownerType;
 
-        try {
-            if (!commit_link || commit_link.trim() === "" || !(commit_link.startsWith("https://"))) {
-                return res.status(400).json({ message: "Invalid commit link." });
-            }
-            const data = await axios.get(commit_link);
-            if (data.status !== 200 ) {
-                return res.status(400).json({ message: "Invalid commit link." });
-            }
-        } catch (err) {
-            return res.status(400).json({ message: "Commit link unreachable." });
+        if (!isValidRepoLink(commit_link)) {
+            return res.status(400).json({
+                message: "Commit link must be an https:// link to GitHub, GitLab or Bitbucket."
+            });
         }
 
 
