@@ -3,7 +3,7 @@
 import fs from "fs";
 import path from "path";
 import Sequelize from "sequelize";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 import process from "process";
 import configs from "../config/config.js";
 
@@ -30,8 +30,7 @@ const files = fs.readdirSync(__dirname).filter(file =>
 );
 
 for (const file of files) {
-  const modelPath = path.join(__dirname, file).replace(/\\/g, "/");
-  const modelModule = await import(`file://${modelPath}`);
+  const modelModule = await import(pathToFileURL(path.join(__dirname, file)).href);
   const model = modelModule.default(sequelize, Sequelize.DataTypes);
   db[model.name] = model;
 }

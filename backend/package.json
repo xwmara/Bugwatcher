@@ -4,9 +4,11 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:migrate": "sequelize-cli db:migrate"
   },
   "keywords": [],
   "author": "",
@@ -28,6 +30,10 @@
     "zxcvbn": "^4.4.2"
   },
   "devDependencies": {
-    "sequelize-cli": "^6.6.3"
+    "@electric-sql/pglite": "0.5.8",
+    "@electric-sql/pglite-socket": "0.2.11",
+    "sequelize-cli": "^6.6.3",
+    "supertest": "^7.3.1",
+    "vitest": "^5.0.3"
   }
 }
