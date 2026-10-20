@@ -37,8 +37,8 @@ export default function ProjectsListForTester() {
             <div key={p.id} className="tester-project-card">
           <h4>{p.name || p.title}</h4>
             <p><strong>Repo:</strong> {p.repo || p.commit_link}</p>
-            <p><strong>Owner:</strong> {p.owner || p.owner?.email || "—"}</p>
-            <p><strong>Testeri:</strong> {p.testers?.length || (p.Users ? p.Users.length : 0)}</p>
+            <p><strong>Owner:</strong> {p.Owner?.email || p.Owner?.name || "—"}</p>
+            <p><strong>Testeri:</strong> {p.testers?.length || 0}</p>
               <p><strong>Bug-uri:</strong> {bugCount}</p>
 
               {!isTester && (

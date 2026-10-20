@@ -333,53 +333,47 @@ export const getUserProjects = async (req, res, next) => {
       return res.status(404).json({ message: "User not found." });
     }
     
+    // Project members (MP owner/team members and testers who joined), without passwords
+    const includeMembers = [{
+      model: User,
+      as: 'Users',
+      attributes: ['id', 'email', 'role'],
+      through: { attributes: [] }
+    }];
+
+    let projectsRaw;
     if (user.role === "MP") {
-      const userWithProjects = await User.findByPk(userID, {
-        include: [{
-          model: Project,
-          as: 'Projects',
-          through: { attributes: [] },
-        }],
-        attributes: { exclude: ["password"] }
-      });
-      return res.status(200).json({ Projects: userWithProjects });
-    }
-    else if (user.role === "TST") {
-      // Testers should see available projects. Include Users so we can surface tester membership
-      const projectsRaw = await Project.findAll({
-        include: [{
-          model: User,
-          as: 'Users',
-          attributes: ['id', 'email', 'role'],
-          through: { attributes: [] }
-        }]
-      });
-
-      const projects = await Promise.all(projectsRaw.map(async (p) => {
-        const proj = p.toJSON ? p.toJSON() : p;
-        let owner = null;
-        try {
-          if (proj.owner_type === 'USER') {
-            owner = await User.findByPk(proj.owner_id, { attributes: ['id', 'email', 'role'] });
-          } else if (proj.owner_type === 'TEAM') {
-            owner = await Team.findByPk(proj.owner_id);
-          }
-        } catch (e) {
-          // ignore owner lookup errors and leave owner as null
-        }
-
-        // testers: array of tester emails
-        const testers = (proj.Users || []).map(u => u.email);
-        // whether requesting user already joined
-        const joined = (proj.Users || []).some(u => u.id === userID);
-
-        return { ...proj, Owner: owner, testers, joined };
-      }));
-
-      return res.status(200).json({ Projects: projects });
+      // MPs see the projects they belong to
+      projectsRaw = await user.getProjects({ include: includeMembers, joinTableAttributes: [] });
+    } else if (user.role === "TST") {
+      // Testers see all available projects, so they can join them
+      projectsRaw = await Project.findAll({ include: includeMembers });
     } else {
       return res.status(400).json({ message: "Invalid user role." });
     }
+
+    const projects = await Promise.all(projectsRaw.map(async (p) => {
+      const proj = p.toJSON ? p.toJSON() : p;
+      let owner = null;
+      try {
+        if (proj.owner_type === 'USER') {
+          owner = await User.findByPk(proj.owner_id, { attributes: ['id', 'email', 'role'] });
+        } else if (proj.owner_type === 'TEAM') {
+          owner = await Team.findByPk(proj.owner_id);
+        }
+      } catch (e) {
+        // ignore owner lookup errors and leave owner as null
+      }
+
+      // testers: emails of the TST members only (the MP owner is a member too, but not a tester)
+      const testers = (proj.Users || []).filter(u => u.role === "TST").map(u => u.email);
+      // whether requesting user already joined
+      const joined = (proj.Users || []).some(u => u.id === userID);
+
+      return { ...proj, Owner: owner, testers, joined };
+    }));
+
+    return res.status(200).json({ Projects: projects });
 
   } catch (err) {
     return next(err);

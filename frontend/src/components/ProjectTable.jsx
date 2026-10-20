@@ -1,17 +1,17 @@
 import { useContext } from "react";
 import { AppContext } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
 
 export default function ProjectTable() {
   const { projects, bugs, loading } = useContext(AppContext);
   const navigate = useNavigate();
-  
 
+  if (loading) {
+    return <p>Se încarcă proiectele...</p>;
+  }
   if (projects.length === 0) {
     return <p>Nu exista proiecte inregistrate.</p>;
   }
-  console.log("Rendering ProjectTable with projects:", projects);
 
   const getBugCountForProject = (projectId) =>
     bugs.filter((b) => b.projectId === projectId).length;
@@ -42,8 +42,9 @@ export default function ProjectTable() {
                 {p.commit_link}
               </a>
             </td>
-            <td>{projects.email || "—"}</td>
-            <td>{p.team?.join(", ") || "—"}</td>
+            {/* Owner is a user (email) or a team (name) */}
+            <td>{p.Owner?.email || p.Owner?.name || "—"}</td>
+            <td>{p.Users?.map((u) => u.email).join(", ") || "—"}</td>
             <td>{getBugCountForProject(p.id)}</td>
           </tr>
         ))}
