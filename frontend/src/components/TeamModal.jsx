@@ -3,7 +3,7 @@ import { api } from "../api/client";
 import { AuthContext } from "../context/AuthContext";
 
 export default function TeamModal({ onClose }) {
-  const { user, setUser } = useContext(AuthContext);
+  const { setUser } = useContext(AuthContext);
   const [team, setTeam] = useState(null);
   const [loading, setLoading] = useState(true);
   const [teamName, setTeamName] = useState("");
@@ -31,7 +31,7 @@ export default function TeamModal({ onClose }) {
     if (!teamName.trim()) return alert("Team name is required.");
     setCreating(true);
     try {
-      const res = await api.post("/teams", { name: teamName, description: teamDesc });
+      await api.post("/teams", { name: teamName, description: teamDesc });
       // Refresh user info so teamId is set in context
       const userRes = await api.get("/users/me");
       if (userRes.data && setUser) setUser(userRes.data);

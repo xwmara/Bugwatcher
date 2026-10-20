@@ -1,21 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useState } from "react";
+import { createContext, useEffect, useState } from "react";
 import { api } from "../api/client";
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-
-  // lista de useri înregistrați
-  const [users, setUsers] = useState([
-    // useri demo 
-    { email: "mp@mara.com", password: "1234", role: "MP" },
-    { email: "tst@mara.com", password: "1234", role: "TST" },
-  ]);
 
  
   useEffect(() => {
@@ -51,7 +41,6 @@ export const AuthProvider = ({ children }) => {
     <AuthContext.Provider
       value={{
         user,
-        users,
         setUser,
         loginUser,
         logoutUser
