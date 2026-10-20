@@ -9,7 +9,7 @@ const { Team, User } = db;
  * @returns {Object} echipa creată
  */
 
-export const createTeam = async (req, res) => {
+export const createTeam = async (req, res, next) => {
     try {
         const { name, description } = req.body;
         const userId = req.user?.id;
@@ -50,10 +50,7 @@ export const createTeam = async (req, res) => {
 
 
     } catch (err) {
-        return res.status(500).json({
-            message: "Internal server error.",
-            error: err.message
-        });
+        return next(err);
     }
 }
 
@@ -63,7 +60,7 @@ export const createTeam = async (req, res) => {
  * @returns {Object[]} lista de echipe
  */
 
-export const getAllTeams = async (req, res) => {
+export const getAllTeams = async (req, res, next) => {
     try {
         const teams = await Team.findAll({
             include: [{
@@ -74,10 +71,7 @@ export const getAllTeams = async (req, res) => {
         return res.status(200).json(teams);
 
     } catch (err) {
-        return res.status(500).json({
-            message: "Internal server error.",
-            error: err.message
-        });
+        return next(err);
     }
 
 }
@@ -87,7 +81,7 @@ export const getAllTeams = async (req, res) => {
  * @route GET /teams/my
  * @returns {Object} echipa utilizatorului
  */
-export const getMyTeam = async (req, res) => {
+export const getMyTeam = async (req, res, next) => {
     try {
         const userId = req.user?.id;
         if (!userId) return res.status(403).json({ message: "Unauthorized." });
@@ -107,7 +101,7 @@ export const getMyTeam = async (req, res) => {
         });
         return res.status(200).json(team);
     } catch (err) {
-        return res.status(500).json({ message: "Internal server error.", error: err.message });
+        return next(err);
     }
 };
 
@@ -117,7 +111,7 @@ export const getMyTeam = async (req, res) => {
  * @param {Object} req.body - {email}
  * @returns {Object} mesaj de succes
  */
-export const inviteToTeam = async (req, res) => {
+export const inviteToTeam = async (req, res, next) => {
     try {
         const inviterId = req.user?.id;
         if (!inviterId) return res.status(403).json({ message: "Unauthorized." });
@@ -156,7 +150,7 @@ export const inviteToTeam = async (req, res) => {
         return res.status(200).json({ message: "User invited successfully." });
 
     } catch (err) {
-        return res.status(500).json({ message: "Internal server error.", error: err.message });
+        return next(err);
     }
 };
 
@@ -165,7 +159,7 @@ export const inviteToTeam = async (req, res) => {
  * @route POST /teams/leave
  * @returns {Object} mesaj de succes
  */
-export const leaveTeam = async (req, res) => {
+export const leaveTeam = async (req, res, next) => {
     try {
         const userId = req.user?.id;
         if (!userId) return res.status(403).json({ message: "Unauthorized." });
@@ -182,6 +176,6 @@ export const leaveTeam = async (req, res) => {
 
         return res.status(200).json({ message: "Left team successfully." });
     } catch (err) {
-        return res.status(500).json({ message: "Internal server error.", error: err.message });
+        return next(err);
     }
 };

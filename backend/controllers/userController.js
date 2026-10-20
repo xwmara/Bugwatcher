@@ -13,7 +13,7 @@ const { User, Project, Team } = db;
  * @returns {Object} user creat
  */
 
-export const createUser = async (req, res) => {
+export const createUser = async (req, res, next) => {
   try {
     const { email, password, role } = req.body;
 
@@ -48,10 +48,7 @@ export const createUser = async (req, res) => {
     return res.status(201).json(userJson);
 
   } catch (err) {
-    return res.status(500).json({
-      message: "Internal server error.",
-      error: err.message
-    });
+    return next(err);
   }
 };
 
@@ -62,7 +59,7 @@ export const createUser = async (req, res) => {
  * @returns {Object[]} lista de useri
  */
 
-export const getUsers = async (req, res) => {
+export const getUsers = async (req, res, next) => {
   try {
     const users = await User.findAll({
       attributes: { exclude: ["password"] }
@@ -70,10 +67,7 @@ export const getUsers = async (req, res) => {
 
     return res.status(200).json(users);
   } catch (err) {
-    return res.status(500).json({
-      message: "Internal server error.",
-      error: err.message
-    });
+    return next(err);
   }
 };
 
@@ -85,7 +79,7 @@ export const getUsers = async (req, res) => {
  * @returns {Object} user creat
  */
 
-export const registerUser = async (req, res) => {
+export const registerUser = async (req, res, next) => {
   try {
     const {email, password, role} = req.body;
     if (!email || !email.includes("@")) {
@@ -131,7 +125,7 @@ export const registerUser = async (req, res) => {
     return res.status(201).json(userJson);
 
     } catch (err) {
-          return res.status(500).json({ message: "Internal Server error", error: err });
+      return next(err);
     }    
 
 }
@@ -143,7 +137,7 @@ export const registerUser = async (req, res) => {
    * @returns {Object} user logat
    */
 
-  export const loginUser = async (req, res) => {
+  export const loginUser = async (req, res, next) => {
     try {
       const { email, password } = req.body;
       if (!email || !password) {
@@ -180,8 +174,7 @@ export const registerUser = async (req, res) => {
       res.status(200).json(existingUser);
 
     } catch (err) {
-      console.log("LOGIN ERROR: ", err);
-      return res.status(500).json({ message: "Internal Server error", error: err });
+      return next(err);
     }
 
   }
@@ -193,7 +186,7 @@ export const registerUser = async (req, res) => {
   * @returns {Object} userul găsit
   */
 
-export const getUserById = async (req, res) => {
+export const getUserById = async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -208,10 +201,7 @@ export const getUserById = async (req, res) => {
     return res.status(200).json(user);
 
   } catch (err) {
-    return res.status(500).json({
-      message: "Internal server error.",
-      error: err.message
-    });
+    return next(err);
   }
 };
 
@@ -223,7 +213,7 @@ export const getUserById = async (req, res) => {
   * @returns {Object} user actualizat
   */
 
-export const updateUser = async (req, res) => {
+export const updateUser = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { email, role } = req.body;
@@ -254,10 +244,7 @@ export const updateUser = async (req, res) => {
 
     return res.status(200).json(userJson);
   } catch (err) {
-      return res.status(500).json({
-        message: "Internal server error.",
-        error: err.message
-      });
+    return next(err);
   }
 };
 
@@ -266,13 +253,13 @@ export const updateUser = async (req, res) => {
  * @route POST /users/logout
  * @returns {Object} mesaj de succes
  */
-export const logoutUser = async (req, res) => {
+export const logoutUser = async (req, res, next) => {
   try {
     res.clearCookie("accessToken");
     return res.status(200).json({ message: "Logged out successfully." });
 
   } catch (err) {
-    return res.status(500).json({ message: "Internal Server error", error: err });
+    return next(err);
   }
 }
 
@@ -282,7 +269,7 @@ export const logoutUser = async (req, res) => {
  * @param {string} id - ID-ul userului
  * @returns {void} fara continut(204 No Content)
  */
-export const deleteUser = async (req, res) => {
+export const deleteUser = async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -295,10 +282,7 @@ export const deleteUser = async (req, res) => {
 
     return res.status(204).send();
   } catch (err) {
-    return res.status(500).json({
-      message: "Internal server error.",
-      error: err.message
-    });
+    return next(err);
   }
 };
 
@@ -308,7 +292,7 @@ export const deleteUser = async (req, res) => {
  * @returns {Object} datele userului logat
  */
 
-export const restoreUser = async (req, res) => {
+export const restoreUser = async (req, res, next) => {
   try {
     const id = req.user.id;
     if (!id) {
@@ -326,10 +310,7 @@ export const restoreUser = async (req, res) => {
     res.json(user);
 
   } catch (err) {
-    return res.status(500).json({
-      message: "Internal server error.",
-      error: err.message
-    });
+    return next(err);
   }
 }
 
@@ -338,7 +319,7 @@ export const restoreUser = async (req, res) => {
  * @route GET /users/projects
  * @returns {Object[]} lista de proiecte
  */
-export const getUserProjects = async (req, res) => {
+export const getUserProjects = async (req, res, next) => {
   try {
     const userID = req.user?.id;
     if (!userID) {
@@ -401,10 +382,7 @@ export const getUserProjects = async (req, res) => {
     }
 
   } catch (err) {
-    res.status(500).json({
-      message: "Internal Server Error",
-      error: err.message
-    });
+    return next(err);
   }
 };
 

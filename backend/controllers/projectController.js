@@ -9,7 +9,7 @@ const { Project, User, Team, Bug } = db;
  * Un tester (TST) se alătură unui proiect
  * @route POST /projects/:id/join
  */
-export const joinProject = async (req, res) => {
+export const joinProject = async (req, res, next) => {
     try {
         const projectId = req.params.id;
         const userId = req.user?.id;
@@ -36,7 +36,7 @@ export const joinProject = async (req, res) => {
         await project.addUser(user);
         return res.status(200).json({ message: "Joined project successfully." });
     } catch (err) {
-        return res.status(500).json({ message: "Internal server error.", error: err.message });
+        return next(err);
     }
 }
 
@@ -47,7 +47,7 @@ export const joinProject = async (req, res) => {
  * @returns {Object} un obiect care contine mesajul de succes, proiectul creat și owner-ul proiectului
  */
 
-export const createProject = async (req, res) => {
+export const createProject = async (req, res, next) => {
    
     // The project can either have a USER or TEAM as owner. 
     // We check if the userId belongs to a team
@@ -84,10 +84,7 @@ export const createProject = async (req, res) => {
                 return res.status(400).json({ message: "Invalid commit link." });
             }
         } catch (err) {
-            return res.status(400).json({
-                message: "Commit link unreachable.",
-                error: err.message
-            });
+            return res.status(400).json({ message: "Commit link unreachable." });
         }
 
 
@@ -124,10 +121,7 @@ export const createProject = async (req, res) => {
         });
 
     } catch (err) {
-        return res.status(500).json({
-            message: "Internal server error.",
-            error: err.message
-        });
+        return next(err);
     }
 }
 
@@ -137,15 +131,12 @@ export const createProject = async (req, res) => {
  * @returns {Object[]} lista de proiecte
  */
 
-export const getAllProjects = async (req, res) => {
+export const getAllProjects = async (req, res, next) => {
     try {
         const projects = await Project.findAll();
         return res.status(200).json(projects);
     } catch (err) {
-        return res.status(500).json({
-            message: "Internal server error.",
-            error: err.message
-        });
+        return next(err);
     }
 }
 
@@ -156,7 +147,7 @@ export const getAllProjects = async (req, res) => {
  */
 
 
-export const getProjectById = async (req, res) => {
+export const getProjectById = async (req, res, next) => {
     try {   
         const { id } = req.params;
         const project = await Project.findByPk(id, {
@@ -191,9 +182,6 @@ export const getProjectById = async (req, res) => {
 
         return res.status(200).json({ ...projectJson, Owner: projectOwner });
     } catch (err) {
-        return res.status(500).json({
-            message: "Internal server error.",
-            error: err.message
-        });
+        return next(err);
     }
 }

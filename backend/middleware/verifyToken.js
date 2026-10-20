@@ -12,6 +12,7 @@ export const verifyAccessToken = (req, res, next) => {
         req.user = decoded;
         next();
     } catch (err) {
-        return res.status(403).json({ message: "Invalid token." });
+        // 401 = not authenticated (expired or invalid token); 403 is for "authenticated but not allowed"
+        return res.status(401).json({ message: "Invalid or expired token." });
     }
 }

@@ -9,6 +9,7 @@ import projectRouter from './routers/projectRouter.js';
 import teamRouter from './routers/teamRouter.js';
 import bugRouter from './routers/bugRouter.js';
 import { apiAudit } from './middleware/apiAudit.js';
+import { errorHandler } from './middleware/errorHandler.js';
 
 // Without a secret, login would fail at runtime, so stop early with a clear message.
 if (!process.env.JWT_SECRET) {
@@ -33,6 +34,9 @@ app.use('/users', userRouter);
 app.use('/projects', projectRouter);
 app.use('/teams', teamRouter);
 app.use('/bugs', bugRouter);
+
+// Must be registered after the routers
+app.use(errorHandler);
 
 const startServer = async () => {
     try {

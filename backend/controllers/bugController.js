@@ -9,7 +9,7 @@ const { Bug, User, Project } = db;
  * @returns {Object} bug creat
  */
 
-export const createBug = async (req, res) => {
+export const createBug = async (req, res, next) => {
 
     try {
         const { title, description, severity, priority, projectId, assignedUserId } = req.body;
@@ -60,10 +60,7 @@ export const createBug = async (req, res) => {
         return res.status(201).json(newBug);
 
     } catch (err) {
-       return res.status(500).json({
-        message: "Internal server error.",
-        error: err.message
-       }) 
+        return next(err);
     }
 }
 
@@ -73,7 +70,7 @@ export const createBug = async (req, res) => {
  * @param {string} projectId - ID-ul proiectului
  * @returns {Object[]} lista de bug-uri asociate proiectului
  */
-export const getBugsByProjectId = async (req, res) => {
+export const getBugsByProjectId = async (req, res, next) => {
     try {
         const { projectId } = req.params; 
 
@@ -99,10 +96,7 @@ export const getBugsByProjectId = async (req, res) => {
 
         return res.status(200).json(bugs);
     } catch (err) {
-        return res.status(500).json({
-            message: "Internal server error.",
-            error: err.message
-        });
+        return next(err);
     }
 };
 
@@ -113,7 +107,7 @@ export const getBugsByProjectId = async (req, res) => {
  * @param {Object} req.body - {title, description, severity, priority, status, assignedUserId}
  * @returns {Object} bug actualizat
  */
-export const updateBug = async (req, res) => {
+export const updateBug = async (req, res, next) => {
     try {
         const { id } = req.params;
         const { title, description, severity, priority, status, assignedUserId } = req.body;
@@ -141,7 +135,7 @@ export const updateBug = async (req, res) => {
 
         return res.status(200).json({ message: "Bug updated successfully", bug });
     } catch (err) {
-        return res.status(500).json({ message: "Internal server error.", error: err.message });
+        return next(err);
     }
 };
 
@@ -151,7 +145,7 @@ export const updateBug = async (req, res) => {
  * @param {string} id - ID-ul bug-ului de șters
  * @returns {Object} mesaj de succes
  */
-export const deleteBug = async (req, res) => {
+export const deleteBug = async (req, res, next) => {
     try {
         const { id } = req.params;
 
@@ -163,7 +157,7 @@ export const deleteBug = async (req, res) => {
         await bug.destroy();
         return res.status(200).json({ message: "Bug deleted successfully." });
     } catch (err) {
-        return res.status(500).json({ message: "Internal server error.", error: err.message });
+        return next(err);
     }
 };
 
@@ -173,7 +167,7 @@ export const deleteBug = async (req, res) => {
  * @param {string} id - ID-ul bug-ului
  * @returns {Object} bug-ul găsit, cu reporter și assignedUser incluse
  */
-export const getBugById = async (req, res) => {
+export const getBugById = async (req, res, next) => {
     try {
         const { id } = req.params;
         const bug = await Bug.findByPk(id, {
@@ -195,7 +189,7 @@ export const getBugById = async (req, res) => {
         }
         return res.status(200).json(bug);
     } catch (err) {
-        return res.status(500).json({ message: "Internal server error.", error: err.message });
+        return next(err);
     }
 };
 
