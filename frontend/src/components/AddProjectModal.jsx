@@ -1,34 +1,33 @@
 import { useState, useContext } from "react";
 import { AppContext } from "../context/AppContext";
-import { AuthContext } from "../context/AuthContext";
-import { api } from "../api/client";
+import { api, getErrorMessage } from "../api/client";
 
 export default function AddProjectModal({ onClose }) {
-  const { addProject } = useContext(AppContext);
-  const { user } = useContext(AuthContext);
+  const { fetchProjects } = useContext(AppContext);
 
   const [name, setName] = useState("");
   const [repo, setRepo] = useState("");
-  const [teamInput, setTeamInput] = useState("");
+  const [error, setError] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // const team = teamInput.split(",").map(t => t.trim());
-    // const team = req.user.team
-    
-    const res = await api.post("/projects", {
+    setError("");
+    setSaving(true);
+    try {
+      await api.post("/projects", {
         title: name,
         commit_link: repo
-      })
-
-    console.log(res);
-    if (!res.data) {
-      alert("A apărut o eroare la crearea proiectului.");
-      return;
+      });
+      // Reload the list so the new project appears without a page refresh
+      await fetchProjects();
+      onClose();
+    } catch (err) {
+      // e.g. "Invalid commit link." or "Commit link unreachable."
+      setError(getErrorMessage(err, "A apărut o eroare la crearea proiectului."));
+    } finally {
+      setSaving(false);
     }
-
-    onClose();
   };
 
   return (
@@ -36,8 +35,10 @@ export default function AddProjectModal({ onClose }) {
       <div className="modal">
         <h2>Adaugă proiect</h2>
 
+        {error && <p style={{ color: "red" }}>{error}</p>}
+
         <form onSubmit={handleSubmit}>
-          
+
           <label>Nume proiect</label>
           <input
             type="text"
@@ -54,22 +55,12 @@ export default function AddProjectModal({ onClose }) {
             required
           />
 
-          {/* <label>Echipa (separate prin virgulă)</label>
-          <input
-            type="text"
-            value={teamInput}
-            onChange={(e) => setTeamInput(e.target.value)}
-            placeholder="ex: Mara, Andrei, Ioana"
-            required
-          /> */}
-
           <div className="modal-buttons">
-    <button onClick={handleSubmit}>Salvează proiect</button>
-    <button className="cancel-btn" onClick={onClose}>Anulează</button>
-</div>
-
-
-         
+            <button type="submit" disabled={saving}>
+              {saving ? "Se salvează..." : "Salvează proiect"}
+            </button>
+            <button type="button" className="cancel-btn" onClick={onClose}>Anulează</button>
+          </div>
         </form>
       </div>
     </div>
