@@ -10,11 +10,6 @@ export default (sequelize, DataTypes) => {
         foreignKey: 'teamId',
         onDelete: 'CASCADE',
       })
-      Team.belongsToMany(models.User, {
-        through: 'TeamProjects',
-        foreignKey: 'teamId',
-        other: 'userID'
-      })
 
     }
   }
