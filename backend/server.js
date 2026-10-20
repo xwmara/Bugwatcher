@@ -24,10 +24,6 @@ app.use(cookieParser());
 app.use(apiAudit);
 
 
-console.log(`Postgres pass: ${process.env.POSTGRES_PASS}`);
-console.log(`Postgres username: ${process.env.POSTGRES_USERNAME}`);
-
-
 
 const sequelize = new Sequelize(
     "postgres",
@@ -43,7 +39,6 @@ const sequelize = new Sequelize(
 
 // await sequelize.sync({ alter: true });
 
-console.log("Sequelize instance username:", sequelize.config.username);
 console.log("Database:", sequelize.config.database);
 console.log("Host:", sequelize.config.host);
 console.log("Port:", sequelize.config.port);

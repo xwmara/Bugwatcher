@@ -146,7 +146,6 @@ export const registerUser = async (req, res) => {
   export const loginUser = async (req, res) => {
     try {
       const { email, password } = req.body;
-      console.log(`Login attempt: ${email}, ${password}`);
       if (!email || !password) {
         return res.status(400).json({message: "Email and password are required."});
       }
@@ -163,10 +162,8 @@ export const registerUser = async (req, res) => {
         return res.status(401).json({message: "Invalid email or password."});
       }
 
-      console.log("FOUND USER: ", existingUser.toJSON());
       const passwordMatch = await bcrypt.compare(password, existingUser.password);
       if (!passwordMatch) {
-        console.log("Password mismatch for user: ", existingUser.email);
         return res.status(401).json({message: "Invalid email or password."});
       }
       const userJson = existingUser.toJSON();
@@ -177,8 +174,6 @@ export const registerUser = async (req, res) => {
       if (!accessOptions) {
         return res.status(500).json({ message: "Cookie configuration error." });
       }
-      console.log("Access options loaded.");
-      console.log("Creating access token for user ID: ", existingUser.id);
 
       const accessToken = createAccessToken(existingUser.id);
       res.cookie("accessToken", accessToken, accessOptions);
@@ -346,7 +341,6 @@ export const restoreUser = async (req, res) => {
 export const getUserProjects = async (req, res) => {
   try {
     const userID = req.user?.id;
-    console.log("Fetching projects for user ID:", userID);
     if (!userID) {
       return res.status(403).json({ message: "Unauthorized." });
     }
@@ -367,8 +361,6 @@ export const getUserProjects = async (req, res) => {
         }],
         attributes: { exclude: ["password"] }
       });
-      console.log("userWithProjects.Projects:", userWithProjects.Projects);
-      console.log("userWithProjects: ", userWithProjects);
       return res.status(200).json({ Projects: userWithProjects });
     }
     else if (user.role === "TST") {
