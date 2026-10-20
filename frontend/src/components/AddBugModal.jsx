@@ -22,6 +22,7 @@ export default function AddBugModal({ projectId, onClose }) {
         severity,
         priority,
         description,
+        commitLink,
       });
       alert("Bug raportat cu succes!");
       onClose();

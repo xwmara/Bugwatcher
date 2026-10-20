@@ -80,3 +80,50 @@
   margin-bottom: 1rem;
   color: var(--accent, #60a5fa);
 }
+
+.bug-links {
+  display: grid;
+  gap: 0.35rem;
+  margin-top: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.bug-links a {
+  color: var(--accent-2, #60a5fa);
+}
+
+.assign-section label {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--text-muted, #93a0b1);
+  font-size: 0.9rem;
+}
+
+.assign-section input {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid var(--border, #333);
+  background: var(--bg-input, #121212);
+  color: inherit;
+}
+
+.resolution-field {
+  margin: 0.75rem 0;
+}
+
+.form-message {
+  margin-top: 1.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+}
+
+.form-message.success {
+  background: rgba(16, 185, 129, 0.12);
+  color: #34d399;
+}
+
+.form-message.error {
+  background: rgba(239, 68, 68, 0.12);
+  color: #f87171;
+}

@@ -31,6 +31,7 @@ describe('AddBugModal', () => {
     await user.selectOptions(screen.getByLabelText('Severitate'), 'High');
     await user.selectOptions(screen.getByLabelText('Prioritate'), 'Medium');
     await user.type(screen.getByLabelText('Descriere'), 'Click Login, nothing happens.');
+    await user.type(screen.getByLabelText('Link commit asociat (opțional)'), 'https://github.com/a/b/commit/1');
     await user.click(screen.getByRole('button', { name: 'Trimite bug' }));
 
     expect(addBug).toHaveBeenCalledWith({
@@ -39,6 +40,7 @@ describe('AddBugModal', () => {
       severity: 'High',
       priority: 'Medium',
       description: 'Click Login, nothing happens.',
+      commitLink: 'https://github.com/a/b/commit/1',
     });
     expect(window.alert).toHaveBeenCalledWith('Bug raportat cu succes!');
     expect(onClose).toHaveBeenCalled();

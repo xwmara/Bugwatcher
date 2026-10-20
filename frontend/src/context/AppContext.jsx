@@ -110,7 +110,8 @@ export const AppProvider = ({ children }) => {
       description: bug.description,
       severity: bug.severity,
       priority: bug.priority,
-      projectId: bug.projectId
+      projectId: bug.projectId,
+      commitLink: bug.commitLink
     })
       .then((res) => {
         const created = res.data;
