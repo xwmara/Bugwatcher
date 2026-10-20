@@ -1,5 +1,5 @@
 import express from "express";
-import { 
+import {
     createProject,
     getAllProjects,
     getProjectById,
@@ -9,12 +9,12 @@ import { verifyAccessToken } from "../middleware/verifyToken.js";
 
 const router = express.Router();
 
-router.post("/", verifyAccessToken, createProject);
+// Every project route requires a logged-in user
+router.use(verifyAccessToken);
+
+router.post("/", createProject);
 router.get('/', getAllProjects);
 router.get('/:id', getProjectById);
-router.post('/:id/join', verifyAccessToken, joinProject);
-
+router.post('/:id/join', joinProject);
 
 export default router;
-
-
