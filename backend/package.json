@@ -8,7 +8,9 @@
     "dev": "node --watch server.js",
     "test": "vitest run",
     "test:watch": "vitest",
-    "db:migrate": "sequelize-cli db:migrate"
+    "db:migrate": "sequelize-cli db:migrate",
+    "db:seed": "sequelize-cli db:seed:all",
+    "db:seed:undo": "sequelize-cli db:seed:undo:all"
   },
   "keywords": [],
   "author": "",
