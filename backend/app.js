@@ -16,6 +16,15 @@ const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
 
 const app = express();
 
+// On Render the app sits behind proxies (Vercel's rewrite, then Render's load balancer),
+// so the visitor's IP arrives in the X-Forwarded-For header. TRUST_PROXY is the number of
+// proxies in front of the app; the rate limiter needs it to see each visitor's real IP.
+// Locally there is no proxy, so it stays 0.
+const trustProxy = Number(process.env.TRUST_PROXY || 0);
+if (trustProxy > 0) {
+    app.set('trust proxy', trustProxy);
+}
+
 // Standard security headers (e.g. no MIME sniffing, no framing, hide "X-Powered-By: Express")
 app.use(helmet());
 app.use(express.json());
@@ -27,6 +36,19 @@ app.use(cookieParser());
 // One log line per request (skipped in tests to keep the output readable)
 if (process.env.NODE_ENV !== 'test') {
     app.use(apiAudit);
+}
+
+// Used by Render to check that the server is up
+app.get('/health', (req, res) => {
+    res.json({ status: 'ok' });
+});
+
+// Temporary check after a deploy: shows which IP the server sees, to choose TRUST_PROXY.
+// Off unless DEBUG_IP=true; turn it off again after checking.
+if (process.env.DEBUG_IP === 'true') {
+    app.get('/debug/ip', (req, res) => {
+        res.json({ ip: req.ip, forwardedFor: req.headers['x-forwarded-for'] ?? null });
+    });
 }
 
 /* Routers */

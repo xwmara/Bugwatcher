@@ -1,0 +1,30 @@
+# Render Blueprint: describes the backend web service, so Render can create it from this file.
+# Secrets (DATABASE_URL, DEMO_PASSWORD, CLIENT_URL) are entered in the Render dashboard, never here.
+services:
+  - type: web
+    name: bugwatcher-api
+    runtime: node
+    plan: free
+    region: frankfurt
+    rootDir: backend
+    buildCommand: npm ci
+    # Migrations and demo data run on every start; both skip what already exists
+    startCommand: npm run db:migrate && npm run db:seed && npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "24"
+      # Number of proxies in front of the app (Vercel rewrite + Render load balancer).
+      # Checked after the first deploy with DEBUG_IP=true (see backend/app.js).
+      - key: TRUST_PROXY
+        value: "2"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: DEMO_PASSWORD
+        sync: false
+      - key: CLIENT_URL
+        sync: false
