@@ -3,6 +3,11 @@ import { canManageProject } from "../utils/permissions.js";
 
 const { Bug, User, Project } = db;
 
+// Allowed values, same as the ENUM columns in the Bugs table
+const SEVERITIES = ["Low", "Medium", "High", "Critical"];
+const PRIORITIES = ["Low", "Medium", "High"];
+const STATUSES = ["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"];
+
 /**
  * Creează un bug nou
  * @route POST /bugs
@@ -125,7 +130,33 @@ export const updateBug = async (req, res, next) => {
             return res.status(403).json({ message: "Only the project owner can update this bug." });
         }
 
-        if (assignedUserId) {
+        // Only the fields sent in the request are changed
+        const changes = {};
+
+        if (title !== undefined) {
+            if (typeof title !== "string" || title.trim() === "") {
+                return res.status(400).json({ message: "Title cannot be empty." });
+            }
+            changes.title = title.trim();
+        }
+        if (description !== undefined) {
+            if (typeof description !== "string") {
+                return res.status(400).json({ message: "Description must be text." });
+            }
+            changes.description = description; // may be "" to clear it
+        }
+        const enumFields = { severity: [severity, SEVERITIES], priority: [priority, PRIORITIES], status: [status, STATUSES] };
+        for (const [field, [value, allowed]] of Object.entries(enumFields)) {
+            if (value === undefined) continue;
+            if (!allowed.includes(value)) {
+                return res.status(400).json({ message: `Invalid ${field}. Use one of: ${allowed.join(", ")}.` });
+            }
+            changes[field] = value;
+        }
+
+        if (assignedUserId === null) {
+            changes.assignedUserId = null; // unassign
+        } else if (assignedUserId !== undefined) {
             const userExists = await User.findByPk(assignedUserId);
             if (!userExists) {
                 return res.status(404).json({ message: "New assigned user not found." });
@@ -135,16 +166,10 @@ export const updateBug = async (req, res, next) => {
             if (userExists.role !== "MP" || !isMember) {
                 return res.status(400).json({ message: "Bugs can only be assigned to MP members of the project." });
             }
+            changes.assignedUserId = userExists.id;
         }
 
-        await bug.update({
-            title: title || bug.title,
-            description: description || bug.description,
-            severity: severity || bug.severity,
-            priority: priority || bug.priority,
-            status: status || bug.status,
-            assignedUserId: assignedUserId || bug.assignedUserId
-        });
+        await bug.update(changes);
 
         return res.status(200).json({ message: "Bug updated successfully", bug });
     } catch (err) {
