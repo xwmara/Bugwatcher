@@ -1,4 +1,4 @@
-import axios from "axios";
+import { api } from "../../api/client";
 import { useContext, useState } from "react";
 import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom"
@@ -19,7 +19,7 @@ export const ProjectPage = () => {
         const fetchProject = async () => {
             setLoading(true);
             try {
-                const res = await axios.get(`http://localhost:3000/projects/${id}`, { withCredentials: true });
+                const res = await api.get(`/projects/${id}`);
                 console.log("Fetched project:", res.data);
                 if (res.status !== 200) {
                     console.error("Failed to fetch project");

@@ -1,7 +1,7 @@
 import { useState, useContext } from "react";
 import { AppContext } from "../context/AppContext";
 import { AuthContext } from "../context/AuthContext";
-import axios from 'axios';
+import { api } from "../api/client";
 
 export default function AddProjectModal({ onClose }) {
   const { addProject } = useContext(AppContext);
@@ -17,12 +17,10 @@ export default function AddProjectModal({ onClose }) {
     // const team = teamInput.split(",").map(t => t.trim());
     // const team = req.user.team
     
-    const res = await axios.post("http://localhost:3000/projects", {
+    const res = await api.post("/projects", {
         title: name,
         commit_link: repo
-      },
-      { withCredentials: true }
-    )
+      })
 
     console.log(res);
     if (!res.data) {

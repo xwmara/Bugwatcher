@@ -1,6 +1,6 @@
 import { useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import axios from "axios";
+import { api } from "../api/client";
 
 export default function LoginModal({ onClose }) {
   const { loginUser } = useContext(AuthContext);
@@ -12,12 +12,10 @@ export default function LoginModal({ onClose }) {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    const res = await axios.post('http://localhost:3000/users/login', { 
+    const res = await api.post('/users/login', { 
       email,  
       password
-    },
-    { withCredentials: true }
-    );
+    });
     
     // console.log(res.data);
     if (!res.data) {

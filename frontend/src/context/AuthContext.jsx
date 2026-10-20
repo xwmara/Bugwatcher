@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useState } from "react";
-import axios from "axios";
+import { api } from "../api/client";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -21,9 +21,7 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const restoreSession = async () => {
       try {
-        const res = await axios.get("http://localhost:3000/users/me", {
-          withCredentials: true
-        });
+        const res = await api.get("/users/me");
         setUser(res.data);
 
       } catch (err) {
@@ -35,7 +33,7 @@ export const AuthProvider = ({ children }) => {
 
   // logout
   const logoutUser = async () => {
-    await axios.post("http://localhost:3000/users/logout", {}, { withCredentials: true });
+    await api.post("/users/logout", {});
     setUser(null);
     // Navigate to homepage - handled by component that calls this
   };

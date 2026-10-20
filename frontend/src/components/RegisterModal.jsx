@@ -1,6 +1,6 @@
 import { useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
-import axios from "axios";
+import { api } from "../api/client";
 
 export default function RegisterModal({ onClose }) {
   const { registerUser } = useContext(AuthContext);
@@ -14,7 +14,7 @@ export default function RegisterModal({ onClose }) {
     e.preventDefault();
     try {
       
-      const res = await axios.post("http://localhost:3000/users/register", {
+      const res = await api.post("/users/register", {
         email,
         password,
         role

@@ -1,5 +1,5 @@
 import { useContext, useState, useEffect } from "react";
-import axios from "axios";
+import { api } from "../api/client";
 import { AuthContext } from "../context/AuthContext";
 
 export default function TeamModal({ onClose }) {
@@ -16,7 +16,7 @@ export default function TeamModal({ onClose }) {
     const fetchTeam = async () => {
       setLoading(true);
       try {
-        const res = await axios.get("http://localhost:3000/teams/my", { withCredentials: true });
+        const res = await api.get("/teams/my");
         setTeam(res.data);
       } catch (err) {
         console.error("Error fetching team:", err);
@@ -31,12 +31,12 @@ export default function TeamModal({ onClose }) {
     if (!teamName.trim()) return alert("Team name is required.");
     setCreating(true);
     try {
-      const res = await axios.post("http://localhost:3000/teams", { name: teamName, description: teamDesc }, { withCredentials: true });
+      const res = await api.post("/teams", { name: teamName, description: teamDesc });
       // Refresh user info so teamId is set in context
-      const userRes = await axios.get("http://localhost:3000/users/me", { withCredentials: true });
+      const userRes = await api.get("/users/me");
       if (userRes.data && setUser) setUser(userRes.data);
       // Refresh team data to get full team with Users
-      const teamRes = await axios.get("http://localhost:3000/teams/my", { withCredentials: true });
+      const teamRes = await api.get("/teams/my");
       setTeam(teamRes.data);
       alert("Team created!");
     } catch (err) {
@@ -51,11 +51,11 @@ export default function TeamModal({ onClose }) {
     if (!inviteEmail.trim()) return alert("Email is required.");
     setInviting(true);
     try {
-      await axios.post("http://localhost:3000/teams/invite", { email: inviteEmail }, { withCredentials: true });
+      await api.post("/teams/invite", { email: inviteEmail });
       alert("User invited!");
       setInviteEmail("");
       // Refresh team members
-      const res = await axios.get("http://localhost:3000/teams/my", { withCredentials: true });
+      const res = await api.get("/teams/my");
       setTeam(res.data);
     } catch (err) {
       console.error(err);

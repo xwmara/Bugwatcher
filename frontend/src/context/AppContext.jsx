@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useEffect } from "react";
 import { createContext, useState } from "react";
-import axios from "axios";
+import { api } from "../api/client";
 
 export const AppContext = createContext();
 
@@ -29,10 +29,7 @@ export const AppProvider = ({ children }) => {
     setLoading(true);
     try {
       console.log("Attempting to fetch projects...");
-      const res = await axios.get(
-        "http://localhost:3000/users/getUserProjects",
-        { withCredentials: true }
-      );
+      const res = await api.get("/users/getUserProjects");
      
       if (res.status !== 200) {
         console.error("Failed to fetch projects");
@@ -55,7 +52,7 @@ export const AppProvider = ({ children }) => {
       // After loading projects, fetch bugs for each project to populate UI
       try {
         const bugsPromises = projectsArray.map((p) =>
-          axios.get(`http://localhost:3000/bugs/project/${p.id}`).then(r => r.data).catch(() => [])
+          api.get(`/bugs/project/${p.id}`).then(r => r.data).catch(() => [])
         );
         const bugsArrays = await Promise.all(bugsPromises);
         const allBugs = bugsArrays.flat();
@@ -78,7 +75,7 @@ export const AppProvider = ({ children }) => {
 
   const addTesterToProject = (projectId, testerEmail) => {
     // Call backend to join project
-    return axios.post(`http://localhost:3000/projects/${projectId}/join`, {}, { withCredentials: true })
+    return api.post(`/projects/${projectId}/join`, {})
       .then((res) => {
         // optimistic update: add tester email locally
         setProjects((prev) =>
@@ -99,13 +96,13 @@ export const AppProvider = ({ children }) => {
   // 🔹 TST ➜ raportează bug
   const addBug = (bug) => {
     // Persist bug to backend
-    return axios.post("http://localhost:3000/bugs", {
+    return api.post("/bugs", {
       title: bug.title,
       description: bug.description,
       severity: bug.severity,
       priority: bug.priority,
       projectId: bug.projectId
-    }, { withCredentials: true })
+    })
       .then((res) => {
         const created = res.data;
         setBugs((prev) => [...prev, created]);

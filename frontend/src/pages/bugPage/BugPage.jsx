@@ -1,4 +1,4 @@
-import axios from "axios";
+import { api } from "../../api/client";
 import { useContext, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
@@ -19,11 +19,11 @@ export const BugPage = () => {
     const fetchBug = async () => {
       setLoading(true);
       try {
-        const res = await axios.get(`http://localhost:3000/bugs/${id}`, { withCredentials: true });
+        const res = await api.get(`/bugs/${id}`);
         setBug(res.data);
 
         // Fetch project to get team members
-        const projRes = await axios.get(`http://localhost:3000/projects/${res.data.projectId}`, { withCredentials: true });
+        const projRes = await api.get(`/projects/${res.data.projectId}`);
         setProject(projRes.data);
 
         // team members are MP users associated with project (only MPs can be assigned bugs)
@@ -50,9 +50,9 @@ export const BugPage = () => {
     if (!selectedUserId) return;
     setAssigning(true);
     try {
-      await axios.put(`http://localhost:3000/bugs/${id}`, { assignedUserId: parseInt(selectedUserId, 10) }, { withCredentials: true });
+      await api.put(`/bugs/${id}`, { assignedUserId: parseInt(selectedUserId, 10) });
       // refresh bug
-      const res = await axios.get(`http://localhost:3000/bugs/${id}`, { withCredentials: true });
+      const res = await api.get(`/bugs/${id}`);
       setBug(res.data);
       alert("Bug assigned successfully.");
     } catch (err) {
