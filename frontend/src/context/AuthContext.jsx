@@ -33,7 +33,12 @@ export const AuthProvider = ({ children }) => {
 
   // logout
   const logoutUser = async () => {
-    await api.post("/users/logout", {});
+    try {
+      await api.post("/users/logout", {});
+    } catch (err) {
+      console.error("Logout request failed:", err);
+    }
+    // Log out in the UI even if the request failed (e.g. server unreachable)
     setUser(null);
     // Navigate to homepage - handled by component that calls this
   };

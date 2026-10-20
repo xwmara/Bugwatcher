@@ -189,7 +189,9 @@ export const updateUser = async (req, res, next) => {
  */
 export const logoutUser = async (req, res, next) => {
   try {
-    res.clearCookie("accessToken");
+    // Browsers only delete a cookie when the same options are used as when it was set
+    const { maxAge, ...clearOptions } = accessOptions;
+    res.clearCookie("accessToken", clearOptions);
     return res.status(200).json({ message: "Logged out successfully." });
 
   } catch (err) {
