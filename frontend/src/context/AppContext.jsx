@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
-import { useEffect } from "react";
-import { createContext, useState } from "react";
-import axios from "axios";
+import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { api } from "../api/client";
+import { AuthContext } from "./AuthContext";
 
 export const AppContext = createContext();
 
@@ -9,30 +9,14 @@ export const AppProvider = ({ children }) => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [bugs, setBugs] = useState([]);
+  const { user } = useContext(AuthContext);
+  const userId = user?.id;
 
-  const addProject = (project) => {
-    setProjects((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        name: project.name,
-        repo: project.repo,
-        owner: project.owner,
-        team: project.team || [],
-        testers: [],
-        bugs: []
-      }
-    ]);
-  };
-
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     setLoading(true);
     try {
       console.log("Attempting to fetch projects...");
-      const res = await axios.get(
-        "http://localhost:3000/users/getUserProjects",
-        { withCredentials: true }
-      );
+      const res = await api.get("/users/getUserProjects");
      
       if (res.status !== 200) {
         console.error("Failed to fetch projects");
@@ -55,7 +39,7 @@ export const AppProvider = ({ children }) => {
       // After loading projects, fetch bugs for each project to populate UI
       try {
         const bugsPromises = projectsArray.map((p) =>
-          axios.get(`http://localhost:3000/bugs/project/${p.id}`).then(r => r.data).catch(() => [])
+          api.get(`/bugs/project/${p.id}`).then(r => r.data).catch(() => [])
         );
         const bugsArrays = await Promise.all(bugsPromises);
         const allBugs = bugsArrays.flat();
@@ -69,16 +53,23 @@ export const AppProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-    
-  }
+  }, []);
 
+  // Load the projects of the logged-in user, and clear them on logout,
+  // so the next user never sees the previous user's data.
   useEffect(() => {
-    fetchProjects();
-  }, [])
+    if (userId) {
+      fetchProjects();
+    } else {
+      setProjects([]);
+      setBugs([]);
+      setLoading(false);
+    }
+  }, [userId, fetchProjects]);
 
   const addTesterToProject = (projectId, testerEmail) => {
     // Call backend to join project
-    return axios.post(`http://localhost:3000/projects/${projectId}/join`, {}, { withCredentials: true })
+    return api.post(`/projects/${projectId}/join`, {})
       .then((res) => {
         // optimistic update: add tester email locally
         setProjects((prev) =>
@@ -96,16 +87,17 @@ export const AppProvider = ({ children }) => {
       });
   };
 
-  // 🔹 TST ➜ raportează bug
+  // A tester reports a bug
   const addBug = (bug) => {
     // Persist bug to backend
-    return axios.post("http://localhost:3000/bugs", {
+    return api.post("/bugs", {
       title: bug.title,
       description: bug.description,
       severity: bug.severity,
       priority: bug.priority,
-      projectId: bug.projectId
-    }, { withCredentials: true })
+      projectId: bug.projectId,
+      commitLink: bug.commitLink
+    })
       .then((res) => {
         const created = res.data;
         setBugs((prev) => [...prev, created]);
@@ -123,38 +115,13 @@ export const AppProvider = ({ children }) => {
       });
   };
 
-  // 🔹 MP ➜ își alocă bug
-  const assignBug = (bugId, userEmail) => {
-    setBugs((prev) =>
-      prev.map((b) =>
-        b.id === bugId
-          ? { ...b, assignedTo: userEmail, status: "In Progress" }
-          : b
-      )
-    );
-  };
-
-  // 🔹 MP ➜ marchează rezolvat
-  const resolveBug = (bugId, commitLink) => {
-    setBugs((prev) =>
-      prev.map((b) =>
-        b.id === bugId
-          ? { ...b, status: "Resolved", resolveCommit: commitLink }
-          : b
-      )
-    );
-  };
-
   return (
     <AppContext.Provider
       value={{
         projects,
         bugs,
-        addProject,
         addTesterToProject,
         addBug,
-        assignBug,
-        resolveBug,
         fetchProjects,
         loading,
       }}

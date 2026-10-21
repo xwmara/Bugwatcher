@@ -1,15 +1,13 @@
 import db from "../models/index.js";
-import axios from "axios";
-
-
+import { isValidRepoLink } from "../utils/repoLink.js";
 
 const { Project, User, Team, Bug } = db;
 
 /**
- * Un tester (TST) se alătură unui proiect
+ * A tester (TST) joins a project
  * @route POST /projects/:id/join
  */
-export const joinProject = async (req, res) => {
+export const joinProject = async (req, res, next) => {
     try {
         const projectId = req.params.id;
         const userId = req.user?.id;
@@ -36,18 +34,18 @@ export const joinProject = async (req, res) => {
         await project.addUser(user);
         return res.status(200).json({ message: "Joined project successfully." });
     } catch (err) {
-        return res.status(500).json({ message: "Internal server error.", error: err.message });
+        return next(err);
     }
 }
 
 /**
- * Creează un proiect nou
+ * Creates a new project (MP only)
  * @route POST /projects
  * @param {Object} req.body - {title, commit_link}
- * @returns {Object} un obiect care contine mesajul de succes, proiectul creat și owner-ul proiectului
+ * @returns {Object} success message, the created project and its owner
  */
 
-export const createProject = async (req, res) => {
+export const createProject = async (req, res, next) => {
    
     // The project can either have a USER or TEAM as owner. 
     // We check if the userId belongs to a team
@@ -56,10 +54,7 @@ export const createProject = async (req, res) => {
     try {
         const { title, commit_link } = req.body;
         const id = req.user.id;
-        
-        if (!title || title.trim() === "") {
-            return res.status(400).json({ message: "Project title is required." });
-        }
+
         if (!id) {
             return res.status(403).json({ message: "Forbidden." });
         }
@@ -75,18 +70,9 @@ export const createProject = async (req, res) => {
         const team = await userExists.getTeam();
         let ownerId, ownerType;
 
-        try {
-            if (!commit_link || commit_link.trim() === "" || !(commit_link.startsWith("https://"))) {
-                return res.status(400).json({ message: "Invalid commit link." });
-            }
-            const data = await axios.get(commit_link);
-            if (data.status !== 200 ) {
-                return res.status(400).json({ message: "Invalid commit link." });
-            }
-        } catch (err) {
+        if (!isValidRepoLink(commit_link)) {
             return res.status(400).json({
-                message: "Commit link unreachable.",
-                error: err.message
+                message: "Commit link must be an https:// link to GitHub, GitLab or Bitbucket."
             });
         }
 
@@ -124,39 +110,33 @@ export const createProject = async (req, res) => {
         });
 
     } catch (err) {
-        return res.status(500).json({
-            message: "Internal server error.",
-            error: err.message
-        });
+        return next(err);
     }
 }
 
 /**
- * Ia toate proiectele
+ * Gets all projects
  * @route GET /projects
- * @returns {Object[]} lista de proiecte
+ * @returns {Object[]} list of projects
  */
 
-export const getAllProjects = async (req, res) => {
+export const getAllProjects = async (req, res, next) => {
     try {
         const projects = await Project.findAll();
         return res.status(200).json(projects);
     } catch (err) {
-        return res.status(500).json({
-            message: "Internal server error.",
-            error: err.message
-        });
+        return next(err);
     }
 }
 
 /**
- * Ia un proiect după ID
+ * Gets a project by ID
  * @route GET /projects/:id
- * @returns {Object} proiectul, populat cu Users si Bugs.
+ * @returns {Object} the project with its Users, Bugs and Owner
  */
 
 
-export const getProjectById = async (req, res) => {
+export const getProjectById = async (req, res, next) => {
     try {   
         const { id } = req.params;
         const project = await Project.findByPk(id, {
@@ -191,9 +171,6 @@ export const getProjectById = async (req, res) => {
 
         return res.status(200).json({ ...projectJson, Owner: projectOwner });
     } catch (err) {
-        return res.status(500).json({
-            message: "Internal server error.",
-            error: err.message
-        });
+        return next(err);
     }
 }

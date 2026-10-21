@@ -3,13 +3,13 @@ import db from '../models/index.js';
 const { Team, User } = db;
 
 /**
- * Creează o echipă nouă
+ * Creates a new team (MP only); the creator becomes a member
  * @route POST /teams
  * @param {Object} req.body - {name, description}
- * @returns {Object} echipa creată
+ * @returns {Object} the created team
  */
 
-export const createTeam = async (req, res) => {
+export const createTeam = async (req, res, next) => {
     try {
         const { name, description } = req.body;
         const userId = req.user?.id;
@@ -18,9 +18,6 @@ export const createTeam = async (req, res) => {
             return res.status(403).json({ message: "Unauthorized." });
         }
 
-        if (!name || name.trim() === "") {
-            return res.status(400).json({ message: "Team name is required." });
-        }
 
         const user = await User.findByPk(userId);
         if (!user) {
@@ -50,20 +47,17 @@ export const createTeam = async (req, res) => {
 
 
     } catch (err) {
-        return res.status(500).json({
-            message: "Internal server error.",
-            error: err.message
-        });
+        return next(err);
     }
 }
 
 /**
- * Ia toate echipele
+ * Gets all teams
  * @route GET /teams
- * @returns {Object[]} lista de echipe
+ * @returns {Object[]} list of teams
  */
 
-export const getAllTeams = async (req, res) => {
+export const getAllTeams = async (req, res, next) => {
     try {
         const teams = await Team.findAll({
             include: [{
@@ -74,20 +68,17 @@ export const getAllTeams = async (req, res) => {
         return res.status(200).json(teams);
 
     } catch (err) {
-        return res.status(500).json({
-            message: "Internal server error.",
-            error: err.message
-        });
+        return next(err);
     }
 
 }
 
 /**
- * Obține echipa curentă a utilizatorului autentificat
+ * Gets the logged-in user's team
  * @route GET /teams/my
- * @returns {Object} echipa utilizatorului
+ * @returns {Object} the user's team
  */
-export const getMyTeam = async (req, res) => {
+export const getMyTeam = async (req, res, next) => {
     try {
         const userId = req.user?.id;
         if (!userId) return res.status(403).json({ message: "Unauthorized." });
@@ -107,23 +98,22 @@ export const getMyTeam = async (req, res) => {
         });
         return res.status(200).json(team);
     } catch (err) {
-        return res.status(500).json({ message: "Internal server error.", error: err.message });
+        return next(err);
     }
 };
 
 /**
- * Invită un utilizator în echipa curentă
+ * Adds another MP to the current user's team
  * @route POST /teams/invite
  * @param {Object} req.body - {email}
- * @returns {Object} mesaj de succes
+ * @returns {Object} success message
  */
-export const inviteToTeam = async (req, res) => {
+export const inviteToTeam = async (req, res, next) => {
     try {
         const inviterId = req.user?.id;
         if (!inviterId) return res.status(403).json({ message: "Unauthorized." });
 
         const { email } = req.body;
-        if (!email) return res.status(400).json({ message: "Email is required." });
 
         const inviter = await User.findByPk(inviterId);
         if (!inviter) return res.status(404).json({ message: "Inviter not found." });
@@ -156,16 +146,16 @@ export const inviteToTeam = async (req, res) => {
         return res.status(200).json({ message: "User invited successfully." });
 
     } catch (err) {
-        return res.status(500).json({ message: "Internal server error.", error: err.message });
+        return next(err);
     }
 };
 
 /**
- * Părăsește echipa curentă
+ * Leaves the current team
  * @route POST /teams/leave
- * @returns {Object} mesaj de succes
+ * @returns {Object} success message
  */
-export const leaveTeam = async (req, res) => {
+export const leaveTeam = async (req, res, next) => {
     try {
         const userId = req.user?.id;
         if (!userId) return res.status(403).json({ message: "Unauthorized." });
@@ -182,6 +172,6 @@ export const leaveTeam = async (req, res) => {
 
         return res.status(200).json({ message: "Left team successfully." });
     } catch (err) {
-        return res.status(500).json({ message: "Internal server error.", error: err.message });
+        return next(err);
     }
 };

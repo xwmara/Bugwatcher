@@ -3,28 +3,24 @@
 import fs from "fs";
 import path from "path";
 import Sequelize from "sequelize";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 import process from "process";
+import configs from "../config/config.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const basename = path.basename(__filename);
 const env = process.env.NODE_ENV || "development";
-
-import fsExtra from "fs";
-const configPath = path.join(__dirname, "../config/config.json");
-const rawConfig = fsExtra.readFileSync(configPath, "utf-8");
-const configs = JSON.parse(rawConfig);
 const config = configs[env];
+
+const databaseUrl = process.env[config.use_env_variable];
+if (!databaseUrl) {
+  throw new Error(`Missing ${config.use_env_variable} in backend/.env (see backend/.env.example).`);
+}
 
 const db = {};
 
-let sequelize;
-if (config.use_env_variable) {
-  sequelize = new Sequelize(process.env[config.use_env_variable], config);
-} else {
-  sequelize = new Sequelize(config.database, config.username, config.password, config);
-}
+const sequelize = new Sequelize(databaseUrl, config);
 
 const files = fs.readdirSync(__dirname).filter(file =>
   file.indexOf(".") !== 0 &&
@@ -34,8 +30,7 @@ const files = fs.readdirSync(__dirname).filter(file =>
 );
 
 for (const file of files) {
-  const modelPath = path.join(__dirname, file).replace(/\\/g, "/");
-  const modelModule = await import(`file://${modelPath}`);
+  const modelModule = await import(pathToFileURL(path.join(__dirname, file)).href);
   const model = modelModule.default(sequelize, Sequelize.DataTypes);
   db[model.name] = model;
 }

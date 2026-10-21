@@ -1,26 +1,23 @@
 import db from "../models/index.js";
+import { canManageProject } from "../utils/permissions.js";
 
 const { Bug, User, Project } = db;
 
 /**
- * Creează un bug nou
+ * Creates a new bug (reported by the logged-in user)
  * @route POST /bugs
  * @param {Object} req.body - {title, description, severity, priority, projectId, assignedUserId}
- * @returns {Object} bug creat
+ * @returns {Object} the created bug
  */
 
-export const createBug = async (req, res) => {
+export const createBug = async (req, res, next) => {
 
     try {
-        const { title, description, severity, priority, projectId, assignedUserId } = req.body;
+        const { title, description, severity, priority, projectId, assignedUserId, commitLink } = req.body;
         const requesterId = req.user?.id;
 
         if (!requesterId) return res.status(403).json({ message: "Unauthorized." });
-
-        // required fields
-        if (!title || title.trim() === "" || !projectId || !severity || !priority) {
-            return res.status(400).json({ message: "Missing information in req.body" });
-        }
+        // Required fields and allowed values are checked by validate(createBugBody)
 
         const project = await Project.findByPk(projectId);
         if (!project) {
@@ -54,26 +51,24 @@ export const createBug = async (req, res) => {
             status,
             projectId,
             assignedUserId: assignedUserId || null,
-            reporterId: requesterId
+            reporterId: requesterId,
+            commitLink: commitLink ?? null
         });
 
         return res.status(201).json(newBug);
 
     } catch (err) {
-       return res.status(500).json({
-        message: "Internal server error.",
-        error: err.message
-       }) 
+        return next(err);
     }
 }
 
 /**
- * Obține toate bug-urile unui proiect
+ * Gets all bugs of a project
  * @route GET /bugs/project/:projectId
- * @param {string} projectId - ID-ul proiectului
- * @returns {Object[]} lista de bug-uri asociate proiectului
+ * @param {string} projectId - project ID
+ * @returns {Object[]} the bugs of the project
  */
-export const getBugsByProjectId = async (req, res) => {
+export const getBugsByProjectId = async (req, res, next) => {
     try {
         const { projectId } = req.params; 
 
@@ -99,81 +94,111 @@ export const getBugsByProjectId = async (req, res) => {
 
         return res.status(200).json(bugs);
     } catch (err) {
-        return res.status(500).json({
-            message: "Internal server error.",
-            error: err.message
-        });
+        return next(err);
     }
 };
 
 /**
- * Actualizează un bug existent
+ * Updates a bug (project owner or a member of the owning team only)
  * @route PUT /bugs/:id
- * @param {string} id - ID-ul bug-ului de actualizat
+ * @param {string} id - ID of the bug to update
  * @param {Object} req.body - {title, description, severity, priority, status, assignedUserId}
- * @returns {Object} bug actualizat
+ * @returns {Object} the updated bug
  */
-export const updateBug = async (req, res) => {
+export const updateBug = async (req, res, next) => {
     try {
         const { id } = req.params;
-        const { title, description, severity, priority, status, assignedUserId } = req.body;
+        const { title, description, severity, priority, status, assignedUserId, resolutionCommit } = req.body;
 
         const bug = await Bug.findByPk(id);
         if (!bug) {
             return res.status(404).json({ message: "Bug not found." });
         }
 
-        if (assignedUserId) {
+        // Only the project owner (or a member of the owning team) can change a bug
+        const project = await Project.findByPk(bug.projectId);
+        const requester = await User.findByPk(req.user.id);
+        if (!canManageProject(requester, project)) {
+            return res.status(403).json({ message: "Only the project owner can update this bug." });
+        }
+
+        // Only the fields sent in the request are changed.
+        // Their format and allowed values are checked by validate(updateBugBody).
+        const changes = {};
+        for (const [field, value] of Object.entries({ title, description, severity, priority, status, resolutionCommit })) {
+            if (value !== undefined) changes[field] = value; // description may be "" to clear it
+        }
+
+        // Resolving a bug requires the commit that fixed it
+        const newStatus = changes.status ?? bug.status;
+        const newResolutionCommit = changes.resolutionCommit !== undefined ? changes.resolutionCommit : bug.resolutionCommit;
+        if (newStatus === "RESOLVED" && !newResolutionCommit) {
+            return res.status(400).json({ message: "Add the commit that fixed the bug to mark it as RESOLVED." });
+        }
+        // Reopening a bug removes the old fix
+        if (changes.status === "OPEN" || changes.status === "IN_PROGRESS") {
+            changes.resolutionCommit = null;
+        }
+
+        if (assignedUserId === null) {
+            changes.assignedUserId = null; // unassign
+        } else if (assignedUserId !== undefined) {
             const userExists = await User.findByPk(assignedUserId);
             if (!userExists) {
                 return res.status(404).json({ message: "New assigned user not found." });
             }
+            // Same rule as the bug page: bugs are assigned to MP members of the project
+            const isMember = await project.hasUser(userExists);
+            if (userExists.role !== "MP" || !isMember) {
+                return res.status(400).json({ message: "Bugs can only be assigned to MP members of the project." });
+            }
+            changes.assignedUserId = userExists.id;
         }
 
-        await bug.update({
-            title: title || bug.title,
-            description: description || bug.description,
-            severity: severity || bug.severity,
-            priority: priority || bug.priority,
-            status: status || bug.status,
-            assignedUserId: assignedUserId || bug.assignedUserId
-        });
+        await bug.update(changes);
 
         return res.status(200).json({ message: "Bug updated successfully", bug });
     } catch (err) {
-        return res.status(500).json({ message: "Internal server error.", error: err.message });
+        return next(err);
     }
 };
 
 /**
- * Șterge un bug
+ * Deletes a bug (project owner or a member of the owning team only)
  * @route DELETE /bugs/:id
- * @param {string} id - ID-ul bug-ului de șters
- * @returns {Object} mesaj de succes
+ * @param {string} id - ID of the bug to delete
+ * @returns {Object} success message
  */
-export const deleteBug = async (req, res) => {
+export const deleteBug = async (req, res, next) => {
     try {
         const { id } = req.params;
 
         const bug = await Bug.findByPk(id);
         if (!bug) {
             return res.status(404).json({ message: "Bug not found." });
+        }
+
+        // Only the project owner (or a member of the owning team) can delete a bug
+        const project = await Project.findByPk(bug.projectId);
+        const requester = await User.findByPk(req.user.id);
+        if (!canManageProject(requester, project)) {
+            return res.status(403).json({ message: "Only the project owner can delete this bug." });
         }
 
         await bug.destroy();
         return res.status(200).json({ message: "Bug deleted successfully." });
     } catch (err) {
-        return res.status(500).json({ message: "Internal server error.", error: err.message });
+        return next(err);
     }
 };
 
 /**
- * Obține un bug după ID
+ * Gets a bug by ID
  * @route GET /bugs/:id
- * @param {string} id - ID-ul bug-ului
- * @returns {Object} bug-ul găsit, cu reporter și assignedUser incluse
+ * @param {string} id - bug ID
+ * @returns {Object} the bug, with reporter and assignedUser included
  */
-export const getBugById = async (req, res) => {
+export const getBugById = async (req, res, next) => {
     try {
         const { id } = req.params;
         const bug = await Bug.findByPk(id, {
@@ -195,7 +220,7 @@ export const getBugById = async (req, res) => {
         }
         return res.status(200).json(bug);
     } catch (err) {
-        return res.status(500).json({ message: "Internal server error.", error: err.message });
+        return next(err);
     }
 };
 

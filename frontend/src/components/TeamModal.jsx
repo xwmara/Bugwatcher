@@ -1,9 +1,9 @@
-import { useContext, useState, useEffect } from "react";
-import axios from "axios";
+import { useContext, useState, useEffect, useId } from "react";
+import { api, getErrorMessage } from "../api/client";
 import { AuthContext } from "../context/AuthContext";
 
 export default function TeamModal({ onClose }) {
-  const { user, setUser } = useContext(AuthContext);
+  const { setUser } = useContext(AuthContext);
   const [team, setTeam] = useState(null);
   const [loading, setLoading] = useState(true);
   const [teamName, setTeamName] = useState("");
@@ -11,12 +11,14 @@ export default function TeamModal({ onClose }) {
   const [inviteEmail, setInviteEmail] = useState("");
   const [creating, setCreating] = useState(false);
   const [inviting, setInviting] = useState(false);
+  const [message, setMessage] = useState(null); // { type: "success" | "error", text }
+  const id = useId(); // unique ids that link each <label> to its field
 
   useEffect(() => {
     const fetchTeam = async () => {
       setLoading(true);
       try {
-        const res = await axios.get("http://localhost:3000/teams/my", { withCredentials: true });
+        const res = await api.get("/teams/my");
         setTeam(res.data);
       } catch (err) {
         console.error("Error fetching team:", err);
@@ -27,39 +29,39 @@ export default function TeamModal({ onClose }) {
     fetchTeam();
   }, []);
 
-  const handleCreate = async () => {
-    if (!teamName.trim()) return alert("Team name is required.");
+  const handleCreate = async (e) => {
+    e.preventDefault();
+    setMessage(null);
     setCreating(true);
     try {
-      const res = await axios.post("http://localhost:3000/teams", { name: teamName, description: teamDesc }, { withCredentials: true });
+      await api.post("/teams", { name: teamName, description: teamDesc });
       // Refresh user info so teamId is set in context
-      const userRes = await axios.get("http://localhost:3000/users/me", { withCredentials: true });
+      const userRes = await api.get("/users/me");
       if (userRes.data && setUser) setUser(userRes.data);
       // Refresh team data to get full team with Users
-      const teamRes = await axios.get("http://localhost:3000/teams/my", { withCredentials: true });
+      const teamRes = await api.get("/teams/my");
       setTeam(teamRes.data);
-      alert("Team created!");
+      setMessage({ type: "success", text: "Team created." });
     } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.message || "Error creating team.");
+      setMessage({ type: "error", text: getErrorMessage(err, "Could not create the team.") });
     } finally {
       setCreating(false);
     }
   };
 
-  const handleInvite = async () => {
-    if (!inviteEmail.trim()) return alert("Email is required.");
+  const handleInvite = async (e) => {
+    e.preventDefault();
+    setMessage(null);
     setInviting(true);
     try {
-      await axios.post("http://localhost:3000/teams/invite", { email: inviteEmail }, { withCredentials: true });
-      alert("User invited!");
+      await api.post("/teams/invite", { email: inviteEmail });
+      setMessage({ type: "success", text: `${inviteEmail} joined the team.` });
       setInviteEmail("");
       // Refresh team members
-      const res = await axios.get("http://localhost:3000/teams/my", { withCredentials: true });
+      const res = await api.get("/teams/my");
       setTeam(res.data);
     } catch (err) {
-      console.error(err);
-      alert(err.response?.data?.message || "Error inviting user.");
+      setMessage({ type: "error", text: getErrorMessage(err, "Could not invite this user.") });
     } finally {
       setInviting(false);
     }
@@ -76,28 +78,36 @@ export default function TeamModal({ onClose }) {
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal" onClick={(e) => e.stopPropagation()}>
-        <h2>Team Management</h2>
+        <h2>Team</h2>
+
+        {message && (
+          <p className={message.type === "error" ? "form-error" : "form-success"} role={message.type === "error" ? "alert" : "status"}>
+            {message.text}
+          </p>
+        )}
 
         {!team || !team.id ? (
-          <div>
-            <p>You are not in a team yet.</p>
+          <form onSubmit={handleCreate}>
+            <p>You are not in a team yet. Projects you create while in a team belong to the whole team.</p>
+            <label htmlFor={`${id}-name`}>Team name</label>
             <input
+              id={`${id}-name`}
               type="text"
-              placeholder="Team name"
+              required
               value={teamName}
               onChange={(e) => setTeamName(e.target.value)}
             />
+            <label htmlFor={`${id}-description`}>Description (optional)</label>
             <input
+              id={`${id}-description`}
               type="text"
-              placeholder="Description (optional)"
               value={teamDesc}
               onChange={(e) => setTeamDesc(e.target.value)}
-              style={{ marginTop: "0.5rem" }}
             />
-            <button className="btn primary" onClick={handleCreate} disabled={creating} style={{ marginTop: "0.5rem" }}>
-              {creating ? "Creating..." : "Create Team"}
+            <button className="btn primary" type="submit" disabled={creating} style={{ marginTop: "0.5rem" }}>
+              {creating ? "Creating..." : "Create team"}
             </button>
-          </div>
+          </form>
         ) : (
           <div>
             <h3>{team.name}</h3>
@@ -114,16 +124,20 @@ export default function TeamModal({ onClose }) {
               <p>No members.</p>
             )}
 
-            <h4 style={{ marginTop: "1rem" }}>Invite MP</h4>
-            <input
-              type="email"
-              placeholder="User email"
-              value={inviteEmail}
-              onChange={(e) => setInviteEmail(e.target.value)}
-            />
-            <button className="btn primary" onClick={handleInvite} disabled={inviting} style={{ marginLeft: "0.5rem" }}>
-              {inviting ? "Inviting..." : "Invite"}
-            </button>
+            <form onSubmit={handleInvite}>
+              <label htmlFor={`${id}-invite`} style={{ marginTop: "1rem", display: "block" }}>Add a project member (MP) by email</label>
+              <input
+                id={`${id}-invite`}
+                type="email"
+                required
+                placeholder="name@example.com"
+                value={inviteEmail}
+                onChange={(e) => setInviteEmail(e.target.value)}
+              />
+              <button className="btn primary" type="submit" disabled={inviting} style={{ marginLeft: "0.5rem" }}>
+                {inviting ? "Adding..." : "Add"}
+              </button>
+            </form>
           </div>
         )}
 

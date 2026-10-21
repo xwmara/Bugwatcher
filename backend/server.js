@@ -1,73 +1,28 @@
-import express from 'express';
-import dotenv from 'dotenv';
-import cors from 'cors';
-import { Sequelize } from "sequelize";
-import userRouter from './routers/userRouter.js';
-import projectRouter from './routers/projectRouter.js';
-import teamRouter from './routers/teamRouter.js';
-import bugRouter from './routers/bugRouter.js';
-import { apiAudit } from './middleware/apiAudit.js';
-import cookieParser from 'cookie-parser';
+// Entry point: loads settings, checks the database connection and starts the HTTP server.
+// Load backend/.env before any other module reads process.env.
+import 'dotenv/config';
+import app from './app.js';
+import db from './models/index.js';
 
-dotenv.config();
+// Without a secret, login would fail at runtime, so stop early with a clear message.
+if (!process.env.JWT_SECRET) {
+    console.error("Missing JWT_SECRET in backend/.env (see backend/.env.example).");
+    process.exit(1);
+}
 
-const app = express();
-const PORT = 3000;
-
-
-app.use(express.json());
-app.use(cors({
-    origin: 'http://localhost:5173',
-    credentials: true
-}));
-app.use(cookieParser());
-app.use(apiAudit);
-
-
-console.log(`Postgres pass: ${process.env.POSTGRES_PASS}`);
-console.log(`Postgres username: ${process.env.POSTGRES_USERNAME}`);
-
-
-
-const sequelize = new Sequelize(
-    "postgres",
-    `${process.env.POSTGRES_USERNAME}`,
-    `${process.env.POSTGRES_PASS}`,
-
-{
-    host: "localhost",
-    port: 5433,
-    dialect: "postgres",
-    logging: false
-});
-
-// await sequelize.sync({ alter: true });
-
-console.log("Sequelize instance username:", sequelize.config.username);
-console.log("Database:", sequelize.config.database);
-console.log("Host:", sequelize.config.host);
-console.log("Port:", sequelize.config.port);
-
+const PORT = process.env.PORT || 3000;
 
 const startServer = async () => {
     try {
-        console.log("Testing database connection...");
-        await sequelize.authenticate();
+        await db.sequelize.authenticate();
         console.log("Connected to PostgreSQL.");
         app.listen(PORT, () => {
             console.log(`Server started on port ${PORT}`);
-        })
+        });
     } catch (err) {
-        console.log(`Internal server error: ${err}`);
+        console.error(`Could not connect to the database: ${err.name} ${err.message}`);
+        process.exit(1);
     }
 }
 
 startServer();
-
-/* Routers */
-app.use('/users', userRouter); // -> http://localhost:3000/users/
-app.use('/projects', projectRouter); // -> http://localhost:3000/projects/
-app.use('/teams', teamRouter); // -> http://localhost:3000/teams/
-app.use('/bugs', bugRouter); // -> http://localhost:3000/bugs/
-
-

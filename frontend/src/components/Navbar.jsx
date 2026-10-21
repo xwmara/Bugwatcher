@@ -28,8 +28,8 @@ export default function Navbar() {
 
         {!user ? (
           <div className="nav-actions">
-            <button className="btn ghost" onClick={() => setShowRegister(true)}>Register</button>
-            <button className="btn primary" onClick={() => setShowLogin(true)}>Login</button>
+            <button className="btn ghost" onClick={() => setShowRegister(true)}>Sign up</button>
+            <button className="btn primary" onClick={() => setShowLogin(true)}>Log in</button>
           </div>
         ) : (
           <div className="nav-actions">
@@ -40,7 +40,7 @@ export default function Navbar() {
             {user.role === "MP" && (
               <button className="btn ghost" onClick={() => setShowTeam(true)}>Team</button>
             )}
-            <button className="btn ghost" onClick={handleLogout}>Logout</button>
+            <button className="btn ghost" onClick={handleLogout}>Log out</button>
           </div>
         )}
       </nav>

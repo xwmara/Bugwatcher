@@ -1,91 +1,54 @@
 import { useContext } from "react";
+import { Link } from "react-router-dom";
 import { AppContext } from "../context/AppContext";
 import { AuthContext } from "../context/AuthContext";
+import { SEVERITY_RANK, STATUS_LABELS } from "../constants/bugs";
 
+// MP home page: the bugs assigned to the logged-in user that still need work
+// (closed bugs are hidden), most severe first.
 export default function BugListForMP() {
-  const { projects, bugs, assignBug, resolveBug, loading } = useContext(AppContext);
+  const { projects, bugs, loading } = useContext(AppContext);
   const { user } = useContext(AuthContext);
 
-  while (loading) {
-    return (
-      <div>Se încarcă bug-urile... </div>
-    )
-  }
-  const projectList = projects.Projects;
-  // proiectele unde acest MP este owner
-  const ownedProjects = projectList.filter(p => p.owner === user.email);
-  const ownedProjectIds = ownedProjects.map(p => p.id);
+  if (loading || !user) return null;
 
-  // bug-urile lor
-  const myBugs = bugs.filter(b => ownedProjectIds.includes(b.projectId));
+  const myBugs = bugs
+    .filter((b) => b.assignedUserId === user.id && b.status !== "CLOSED")
+    .sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity]);
 
-  if (myBugs.length === 0) {
-    return <p>Nu există bug-uri pentru proiectele tale.</p>;
-  }
-
-  const getProjectName = (id) =>
-    (projects.find(p => p.id === id) || {}).name;
-
-  const handleAssign = (bugId) => {
-    assignBug(bugId, user.email);
-  };
-
-  const handleResolve = (bugId) => {
-    const link = window.prompt("Link commit rezolvare:");
-    if (link) {
-      resolveBug(bugId, link);
-    }
-  };
+  const getProjectTitle = (projectId) =>
+    projects.find((p) => p.id === projectId)?.title || "—";
 
   return (
-    <div className="bug-list-mp">
-      <h3>Bug-urile proiectelor mele</h3>
+    <section className="bug-list-mp" aria-labelledby="my-bugs-title">
+      <h3 id="my-bugs-title">Bugs assigned to me ({myBugs.length})</h3>
 
-      <table className="bug-table">
-        <thead>
-          <tr>
-            <th>Proiect</th>
-            <th>Descriere</th>
-            <th>Severitate</th>
-            <th>Prioritate</th>
-            <th>Status</th>
-            <th>Asignat</th>
-            <th>Commit Rezolvare</th>
-            <th>Acțiuni</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {myBugs.map(b => (
-            <tr key={b.id}>
-              <td>{getProjectName(b.projectId)}</td>
-              <td>{b.description}</td>
-              <td>{b.severity}</td>
-              <td>{b.priority}</td>
-              <td>{b.status}</td>
-              <td>{b.assignedTo || "—"}</td>
-              <td>
-                {b.resolveCommit ? (
-                  <a href={b.resolveCommit} target="_blank">Vezi commit</a>
-                ) : "—"}
-              </td>
-              <td>
-                {b.status === "Open" && (
-                  <button onClick={() => handleAssign(b.id)}>
-                    Alocă-mi
-                  </button>
-                )}
-
-                {b.status !== "Resolved" && (
-                  <button onClick={() => handleResolve(b.id)}>
-                    Rezolvat ✔
-                  </button>
-                )}
-              </td>
+      {myBugs.length === 0 ? (
+        <p className="muted">No open bugs are assigned to you.</p>
+      ) : (
+        <table className="bug-table">
+          <thead>
+            <tr>
+              <th>Bug</th>
+              <th>Project</th>
+              <th>Severity</th>
+              <th>Priority</th>
+              <th>Status</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+          </thead>
+          <tbody>
+            {myBugs.map((b) => (
+              <tr key={b.id}>
+                <td><Link to={`/bugs/${b.id}`}>{b.title}</Link></td>
+                <td>{getProjectTitle(b.projectId)}</td>
+                <td><span className={`badge severity-${b.severity.toLowerCase()}`}>{b.severity}</span></td>
+                <td>{b.priority}</td>
+                <td><span className={`badge status-${b.status.toLowerCase()}`}>{STATUS_LABELS[b.status]}</span></td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </section>
   );
 }

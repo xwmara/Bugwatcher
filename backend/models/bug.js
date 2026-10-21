@@ -31,7 +31,9 @@ export default (sequelize, DataTypes) => {
     status: DataTypes.ENUM("OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"),
     projectId: DataTypes.INTEGER,
     assignedUserId: DataTypes.INTEGER,
-    reporterId: DataTypes.INTEGER
+    reporterId: DataTypes.INTEGER,
+    commitLink: DataTypes.STRING,        // commit where the bug was found (optional)
+    resolutionCommit: DataTypes.STRING   // commit that fixed it (required for RESOLVED)
   }, {
     sequelize,
     modelName: 'Bug',

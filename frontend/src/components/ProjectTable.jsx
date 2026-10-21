@@ -1,17 +1,17 @@
 import { useContext } from "react";
 import { AppContext } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
 
 export default function ProjectTable() {
   const { projects, bugs, loading } = useContext(AppContext);
   const navigate = useNavigate();
-  
 
-  if (projects.length === 0) {
-    return <p>Nu exista proiecte inregistrate.</p>;
+  if (loading) {
+    return <p>Loading projects...</p>;
   }
-  console.log("Rendering ProjectTable with projects:", projects);
+  if (projects.length === 0) {
+    return <p>You have no projects yet. Create your first one below.</p>;
+  }
 
   const getBugCountForProject = (projectId) =>
     bugs.filter((b) => b.projectId === projectId).length;
@@ -20,17 +20,15 @@ export default function ProjectTable() {
     navigate(`/projects/${pid}`)
   }
 
-
   return (
- 
     <table className="project-table">
       <thead>
         <tr>
-          <th>Nume proiect</th>
-          <th>Commit link</th>
+          <th>Project</th>
+          <th>Repository</th>
           <th>Owner</th>
-          <th>Echipă</th>
-          <th>Nr. bug-uri</th>
+          <th>Members</th>
+          <th>Bugs</th>
         </tr>
       </thead>
       <tbody>
@@ -38,12 +36,14 @@ export default function ProjectTable() {
           <tr key={p.id} onClick={() => handleProjectClick(p.id)} className="project-card">
             <td>{p.title}</td>
             <td>
-              <a href={p.commit_link} target="_blank" rel="noreferrer">
+              {/* stopPropagation: opening the repository should not also open the project page */}
+              <a href={p.commit_link} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()}>
                 {p.commit_link}
               </a>
             </td>
-            <td>{projects.email || "—"}</td>
-            <td>{p.team?.join(", ") || "—"}</td>
+            {/* Owner is a user (email) or a team (name) */}
+            <td>{p.Owner?.email || p.Owner?.name || "—"}</td>
+            <td>{p.Users?.map((u) => u.email).join(", ") || "—"}</td>
             <td>{getBugCountForProject(p.id)}</td>
           </tr>
         ))}

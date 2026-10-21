@@ -1,74 +1,71 @@
-import { useState, useContext } from "react";
-import { AuthContext } from "../context/AuthContext";
-import axios from "axios";
+import { useState, useId } from "react";
+import { api, getErrorMessage } from "../api/client";
+import { useNotify } from "../context/NotificationContext";
 
 export default function RegisterModal({ onClose }) {
-  const { registerUser } = useContext(AuthContext);
-
+  const notify = useNotify();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("TST"); // default tester
   const [error, setError] = useState("");
+  const id = useId(); // unique ids that link each <label> to its field
 
   const handleRegister = async (e) => {
     e.preventDefault();
+    setError("");
     try {
-      
-      const res = await axios.post("http://localhost:3000/users/register", {
-        email,
-        password,
-        role
-        
-      })
+      // axios throws for any non-2xx status, so reaching the next line means 201 Created
+      await api.post("/users/register", { email, password, role });
 
-      if (!res.data.success) {
-        setError("Acest email este deja folosit.");
-        return;
-      }
-
-      alert("Cont creat cu succes! Acum te poți loga.");
+      notify("Account created. You can now log in.");
       onClose();
-    } catch (error) {
-      setError("A apărut o eroare la înregistrare.");
-    
+    } catch (err) {
+      if (err.response?.status === 409) {
+        setError("This email is already registered.");
+      } else {
+        // e.g. "Password too weak." or the rate limit message
+        setError(getErrorMessage(err, "Could not create the account. Please try again."));
+      }
     }
   };
 
   return (
     <div className="modal-overlay">
       <div className="modal">
-        <h2>Înregistrare</h2>
+        <h2>Create an account</h2>
 
-        {error && <p style={{ color: "red" }}>{error}</p>}
+        {error && <p role="alert" className="form-error">{error}</p>}
 
         <form onSubmit={handleRegister} className="register-form">
-          <label>Email</label>
+          <label htmlFor={`${id}-email`}>Email</label>
           <input
+            id={`${id}-email`}
             type="email"
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
 
-          <label>Parolă</label>
+          <label htmlFor={`${id}-password`}>Password</label>
           <input
+            id={`${id}-password`}
             type="password"
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          <label>Rol</label>
-          <select value={role} onChange={(e) => setRole(e.target.value)}>
-            <option value="MP">Membru proiect (MP)</option>
+          <label htmlFor={`${id}-role`}>Role</label>
+          <select id={`${id}-role`} value={role} onChange={(e) => setRole(e.target.value)}>
+            <option value="MP">Project member (MP)</option>
             <option value="TST">Tester (TST)</option>
           </select>
 
           <button type="submit" className="add-btn">
-            Creează cont
+            Create account
           </button>
           <button type="button" className="cancel-btn" onClick={onClose}>
-            Anulează
+            Cancel
           </button>
         </form>
       </div>

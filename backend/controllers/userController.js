@@ -7,104 +7,22 @@ import { accessOptions } from "../utils/cookiesConfig.js";
 const { User, Project, Team } = db;
 
 /**
- * Creează un user nou
- * @route POST /users
- * @param {Object} req.body - {email, password, role}
- * @returns {Object} user creat
- */
-
-export const createUser = async (req, res) => {
-  try {
-    const { email, password, role } = req.body;
-
-    if (!email || !email.includes("@")) {
-      return res.status(400).json({ message: "Email invalid." });
-    }
-    if (!password || password.length < 6) {
-      return res.status(400).json({ message: "Parola trebuie sa aiba minim 6 caractere." });
-    }
-    if (role && role !== "MP" && role !== "TST") {
-      return res.status(400).json({ message: "Role invalid. Foloseste MP sau TST." });
-    }
-
-    const normalizedEmail = email.trim().toLowerCase();
-
-    const existingUser = await User.findOne({ where: { email: normalizedEmail } });
-    if (existingUser) {
-      return res.status(409).json({ message: "User already exists." });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const newUser = await User.create({
-      email: normalizedEmail,
-      password: hashedPassword,
-      role: role || "TST"
-    });
-
-    const userJson = newUser.toJSON();
-    delete userJson.password;
-
-    return res.status(201).json(userJson);
-
-  } catch (err) {
-    return res.status(500).json({
-      message: "Internal server error.",
-      error: err.message
-    });
-  }
-};
-
-
-/**
- * Ia toți userii
- * @route GET /users
- * @returns {Object[]} lista de useri
- */
-
-export const getUsers = async (req, res) => {
-  try {
-    const users = await User.findAll({
-      attributes: { exclude: ["password"] }
-    });
-
-    return res.status(200).json(users);
-  } catch (err) {
-    return res.status(500).json({
-      message: "Internal server error.",
-      error: err.message
-    });
-  }
-};
-
-
-/**
- * Înregistrează un user (signup)
+ * Registers a new user (sign up)
  * @route POST /users/register
  * @param {Object} req.body - {email, password, role}
- * @returns {Object} user creat
+ * @returns {Object} the created user (without password)
  */
 
-export const registerUser = async (req, res) => {
+export const registerUser = async (req, res, next) => {
   try {
+    // Format of email, password and role is checked by validate(registerBody)
     const {email, password, role} = req.body;
-    if (!email || !email.includes("@")) {
-      return res.status(400).json({message: "Email invalid."});
-    }
-    
-    if (!password) {
-      return res.status(400).json({message: "Password is required."});
-    }
     const passStrength = zxcvbn(password);
-    
+
     if (passStrength.score < 2) {
       return res.status(400).json({message: "Password too weak."});
     }
-    
-    if (role && role !== "MP" && role !== "TST") {
-        return res.status(400).json({message: "Role invalid. Use MP or TST."});
-    }
-    
+
     const normalizedEmail = email.trim().toLowerCase();
     const existingUser = await User.findOne(
       {where: {
@@ -131,26 +49,23 @@ export const registerUser = async (req, res) => {
     return res.status(201).json(userJson);
 
     } catch (err) {
-          return res.status(500).json({ message: "Internal Server error", error: err });
+      return next(err);
     }    
 
 }
 
    /**
-   * Loghează un user (login)
+   * Logs a user in and sets the accessToken cookie
    * @route POST /users/login
    * @param {Object} req.body - {email, password}
-   * @returns {Object} user logat
+   * @returns {Object} the logged-in user (without password)
    */
 
-  export const loginUser = async (req, res) => {
+  export const loginUser = async (req, res, next) => {
     try {
+      // Required fields are checked by validate(loginBody)
       const { email, password } = req.body;
-      console.log(`Login attempt: ${email}, ${password}`);
-      if (!email || !password) {
-        return res.status(400).json({message: "Email and password are required."});
-      }
-      
+
       const normalizedEmail = email.trim().toLowerCase();
 
       let existingUser = await User.findOne({
@@ -163,10 +78,8 @@ export const registerUser = async (req, res) => {
         return res.status(401).json({message: "Invalid email or password."});
       }
 
-      console.log("FOUND USER: ", existingUser.toJSON());
       const passwordMatch = await bcrypt.compare(password, existingUser.password);
       if (!passwordMatch) {
-        console.log("Password mismatch for user: ", existingUser.email);
         return res.status(401).json({message: "Invalid email or password."});
       }
       const userJson = existingUser.toJSON();
@@ -177,28 +90,25 @@ export const registerUser = async (req, res) => {
       if (!accessOptions) {
         return res.status(500).json({ message: "Cookie configuration error." });
       }
-      console.log("Access options loaded.");
-      console.log("Creating access token for user ID: ", existingUser.id);
 
       const accessToken = createAccessToken(existingUser.id);
       res.cookie("accessToken", accessToken, accessOptions);
       res.status(200).json(existingUser);
 
     } catch (err) {
-      console.log("LOGIN ERROR: ", err);
-      return res.status(500).json({ message: "Internal Server error", error: err });
+      return next(err);
     }
 
   }
 
   /**
-  * Ia un user după ID
+  * Gets a user by ID
   * @route GET /users/:id
-  * @param {string} id - ID-ul userului
-  * @returns {Object} userul găsit
+  * @param {string} id - user ID
+  * @returns {Object} the user (without password)
   */
 
-export const getUserById = async (req, res) => {
+export const getUserById = async (req, res, next) => {
   try {
     const { id } = req.params;
 
@@ -213,43 +123,45 @@ export const getUserById = async (req, res) => {
     return res.status(200).json(user);
 
   } catch (err) {
-    return res.status(500).json({
-      message: "Internal server error.",
-      error: err.message
-    });
+    return next(err);
   }
 };
 
   /**
-  * Actualizează un user după ID
+  * Updates your own account (email only; the role cannot change)
   * @route PUT /users/:id
-  * @param {string} id - ID-ul userului
+  * @param {string} id - user ID
   * @param {Object} req.body - {email, role}
-  * @returns {Object} user actualizat
+  * @returns {Object} the updated user
   */
 
-export const updateUser = async (req, res) => {
+export const updateUser = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { email, role } = req.body;
+
+    // Users can only change their own account
+    if (Number(id) !== req.user.id) {
+      return res.status(403).json({ message: "You can only update your own account." });
+    }
 
     const user = await User.findByPk(id);
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
 
-    if (email !== undefined) {
-      if (!email || !email.includes("@")) {
-        return res.status(400).json({ message: "Email invalid." });
-      }
-      user.email = email.toLowerCase();
+    // The role is chosen at registration; otherwise a tester could make themselves an MP
+    if (role !== undefined && role !== user.role) {
+      return res.status(403).json({ message: "Role cannot be changed." });
     }
 
-    if (role !== undefined) {
-      if (role !== "MP" && role !== "TST") {
-        return res.status(400).json({ message: "Role invalid." });
+    if (email !== undefined) {
+      const normalizedEmail = email.trim().toLowerCase();
+      const emailTaken = await User.findOne({ where: { email: normalizedEmail } });
+      if (emailTaken && emailTaken.id !== user.id) {
+        return res.status(409).json({ message: "User with this email already exists." });
       }
-      user.role = role;
+      user.email = normalizedEmail;
     }
 
     await user.save();
@@ -259,37 +171,41 @@ export const updateUser = async (req, res) => {
 
     return res.status(200).json(userJson);
   } catch (err) {
-      return res.status(500).json({
-        message: "Internal server error.",
-        error: err.message
-      });
+    return next(err);
   }
 };
 
 /**
- * Loghează un user (logout)
+ * Logs the user out (clears the cookie)
  * @route POST /users/logout
- * @returns {Object} mesaj de succes
+ * @returns {Object} success message
  */
-export const logoutUser = async (req, res) => {
+export const logoutUser = async (req, res, next) => {
   try {
-    res.clearCookie("accessToken");
+    // Browsers only delete a cookie when the same options are used as when it was set
+    const { maxAge, ...clearOptions } = accessOptions;
+    res.clearCookie("accessToken", clearOptions);
     return res.status(200).json({ message: "Logged out successfully." });
 
   } catch (err) {
-    return res.status(500).json({ message: "Internal Server error", error: err });
+    return next(err);
   }
 }
 
 /**
- * Șterge un user după ID
+ * Deletes your own account
  * @route DELETE /users/:id
- * @param {string} id - ID-ul userului
- * @returns {void} fara continut(204 No Content)
+ * @param {string} id - user ID
+ * @returns {void} no content (204 No Content)
  */
-export const deleteUser = async (req, res) => {
+export const deleteUser = async (req, res, next) => {
   try {
     const { id } = req.params;
+
+    // Users can only delete their own account
+    if (Number(id) !== req.user.id) {
+      return res.status(403).json({ message: "You can only delete your own account." });
+    }
 
     const user = await User.findByPk(id);
     if (!user) {
@@ -298,22 +214,22 @@ export const deleteUser = async (req, res) => {
 
     await user.destroy();
 
+    // The account no longer exists, so end the session too
+    const { maxAge, ...clearOptions } = accessOptions;
+    res.clearCookie("accessToken", clearOptions);
     return res.status(204).send();
   } catch (err) {
-    return res.status(500).json({
-      message: "Internal server error.",
-      error: err.message
-    });
+    return next(err);
   }
 };
 
 /**
- * Recuperează datele userului logat
+ * Gets the logged-in user (restores the session after a page reload)
  * @route GET /users/me
- * @returns {Object} datele userului logat
+ * @returns {Object} the logged-in user
  */
 
-export const restoreUser = async (req, res) => {
+export const restoreUser = async (req, res, next) => {
   try {
     const id = req.user.id;
     if (!id) {
@@ -331,22 +247,18 @@ export const restoreUser = async (req, res) => {
     res.json(user);
 
   } catch (err) {
-    return res.status(500).json({
-      message: "Internal server error.",
-      error: err.message
-    });
+    return next(err);
   }
 }
 
 /**
- * Ia proiectele unui user
- * @route GET /users/projects
- * @returns {Object[]} lista de proiecte
+ * Gets the projects for the home page: an MP sees their projects, a tester sees all projects
+ * @route GET /users/getUserProjects
+ * @returns {Object[]} list of projects
  */
-export const getUserProjects = async (req, res) => {
+export const getUserProjects = async (req, res, next) => {
   try {
     const userID = req.user?.id;
-    console.log("Fetching projects for user ID:", userID);
     if (!userID) {
       return res.status(403).json({ message: "Unauthorized." });
     }
@@ -358,61 +270,50 @@ export const getUserProjects = async (req, res) => {
       return res.status(404).json({ message: "User not found." });
     }
     
+    // Project members (MP owner/team members and testers who joined), without passwords
+    const includeMembers = [{
+      model: User,
+      as: 'Users',
+      attributes: ['id', 'email', 'role'],
+      through: { attributes: [] }
+    }];
+
+    let projectsRaw;
     if (user.role === "MP") {
-      const userWithProjects = await User.findByPk(userID, {
-        include: [{
-          model: Project,
-          as: 'Projects',
-          through: { attributes: [] },
-        }],
-        attributes: { exclude: ["password"] }
-      });
-      console.log("userWithProjects.Projects:", userWithProjects.Projects);
-      console.log("userWithProjects: ", userWithProjects);
-      return res.status(200).json({ Projects: userWithProjects });
-    }
-    else if (user.role === "TST") {
-      // Testers should see available projects. Include Users so we can surface tester membership
-      const projectsRaw = await Project.findAll({
-        include: [{
-          model: User,
-          as: 'Users',
-          attributes: ['id', 'email', 'role'],
-          through: { attributes: [] }
-        }]
-      });
-
-      const projects = await Promise.all(projectsRaw.map(async (p) => {
-        const proj = p.toJSON ? p.toJSON() : p;
-        let owner = null;
-        try {
-          if (proj.owner_type === 'USER') {
-            owner = await User.findByPk(proj.owner_id, { attributes: ['id', 'email', 'role'] });
-          } else if (proj.owner_type === 'TEAM') {
-            owner = await Team.findByPk(proj.owner_id);
-          }
-        } catch (e) {
-          // ignore owner lookup errors and leave owner as null
-        }
-
-        // testers: array of tester emails
-        const testers = (proj.Users || []).map(u => u.email);
-        // whether requesting user already joined
-        const joined = (proj.Users || []).some(u => u.id === userID);
-
-        return { ...proj, Owner: owner, testers, joined };
-      }));
-
-      return res.status(200).json({ Projects: projects });
+      // MPs see the projects they belong to
+      projectsRaw = await user.getProjects({ include: includeMembers, joinTableAttributes: [] });
+    } else if (user.role === "TST") {
+      // Testers see all available projects, so they can join them
+      projectsRaw = await Project.findAll({ include: includeMembers });
     } else {
       return res.status(400).json({ message: "Invalid user role." });
     }
 
+    const projects = await Promise.all(projectsRaw.map(async (p) => {
+      const proj = p.toJSON ? p.toJSON() : p;
+      let owner = null;
+      try {
+        if (proj.owner_type === 'USER') {
+          owner = await User.findByPk(proj.owner_id, { attributes: ['id', 'email', 'role'] });
+        } else if (proj.owner_type === 'TEAM') {
+          owner = await Team.findByPk(proj.owner_id);
+        }
+      } catch (e) {
+        // ignore owner lookup errors and leave owner as null
+      }
+
+      // testers: emails of the TST members only (the MP owner is a member too, but not a tester)
+      const testers = (proj.Users || []).filter(u => u.role === "TST").map(u => u.email);
+      // whether requesting user already joined
+      const joined = (proj.Users || []).some(u => u.id === userID);
+
+      return { ...proj, Owner: owner, testers, joined };
+    }));
+
+    return res.status(200).json({ Projects: projects });
+
   } catch (err) {
-    res.status(500).json({
-      message: "Internal Server Error",
-      error: err.message
-    });
+    return next(err);
   }
 };
 

@@ -71,3 +71,9 @@
 .bug-table a:hover {
   text-decoration: underline;
 }
+
+/* Repository link: readable on the dark background (the browser default blue was not) */
+.project-header a {
+  color: var(--accent-2, #60a5fa);
+  overflow-wrap: anywhere;
+}
