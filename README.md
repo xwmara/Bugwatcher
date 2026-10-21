@@ -42,7 +42,7 @@ and the team assigns each bug, follows its status and links the commit that fixe
 
 | Part | Technologies |
 |---|---|
-| Frontend | React 19, Vite, React Router, axios, plain CSS |
+| Frontend | React 19, TypeScript (strict), Vite, React Router, axios, plain CSS |
 | Backend | Node.js 24, Express 5, Sequelize 6, zod |
 | Database | PostgreSQL (Neon) |
 | Auth | JWT in an httpOnly, SameSite=Strict cookie; bcrypt password hashes |
@@ -79,11 +79,11 @@ In development, the Vite dev server does the same forwarding.
   built with the project's own migrations, so no database or Docker is needed.
 - **21 component tests** (`frontend/src`): login, sign up, bug report form,
   "Bugs assigned to me" and notifications.
-- GitHub Actions runs lint, all tests and the production build on every push.
+- GitHub Actions runs lint, the TypeScript type check, all tests and the production build on every push.
 
 ```bash
 cd backend && npm test
-cd frontend && npm run lint && npm test && npm run build
+cd frontend && npm run lint && npm run typecheck && npm test && npm run build
 ```
 
 ## Run locally
@@ -121,10 +121,11 @@ backend/
   seeders/              demo data
   tests/                API tests
 frontend/
+  src/types.ts          TypeScript types for the API data (User, Project, Bug, Team)
   src/components/       modals, tables, lists (+ component tests)
   src/pages/            home, project and bug pages
   src/context/          session, projects/bugs and notifications state
-  src/api/client.js     single HTTP client for the API
+  src/api/client.ts     single HTTP client for the API
 render.yaml             Render service definition
 frontend/vercel.json    Vercel rewrites
 ```
