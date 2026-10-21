@@ -18,6 +18,6 @@ export default defineConfig({
   // Component tests (npm test): run in jsdom, a browser simulated in Node
   test: {
     environment: 'jsdom',
-    setupFiles: './src/test/setup.js',
+    setupFiles: './src/test/setup.ts',
   },
 })

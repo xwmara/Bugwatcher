@@ -3,7 +3,7 @@ import { createContext, useEffect, useState, type ReactNode } from "react";
 import { api } from "../api/client";
 import type { User } from "../types";
 
-interface AuthContextValue {
+export interface AuthContextValue {
   user: User | null; // null = not logged in
   setUser: (user: User | null) => void;
   loginUser: (user: User) => void;

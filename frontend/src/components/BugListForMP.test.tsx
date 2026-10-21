@@ -4,18 +4,18 @@ import { describe, expect, it } from 'vitest';
 import BugListForMP from './BugListForMP';
 import { AppContext } from '../context/AppContext';
 import { AuthContext } from '../context/AuthContext';
+import type { Bug } from '../types';
+import { appValue, authValue, makeBug, makeProject, makeUser } from '../test/fixtures';
 
-const me = { id: 1, email: 'mp@example.com', role: 'MP' };
-const projects = [{ id: 10, title: 'Online Bookshop' }, { id: 11, title: 'Weather Dashboard' }];
-const bug = (id, overrides) => ({
-  id, title: `Bug ${id}`, projectId: 10, severity: 'Low', priority: 'Low', status: 'OPEN', assignedUserId: me.id, ...overrides,
-});
+const me = makeUser({ id: 1, email: 'mp@example.com', role: 'MP' });
+const projects = [makeProject({ id: 10, title: 'Online Bookshop' }), makeProject({ id: 11, title: 'Weather Dashboard' })];
+const bug = (id: number, overrides: Partial<Bug> = {}) => makeBug({ id, title: `Bug ${id}`, assignedUserId: me.id, ...overrides });
 
-function renderList(bugs, { loading = false } = {}) {
+function renderList(bugs: Bug[], { loading = false } = {}) {
   render(
     <MemoryRouter>
-      <AuthContext.Provider value={{ user: me }}>
-        <AppContext.Provider value={{ projects, bugs, loading }}>
+      <AuthContext.Provider value={authValue({ user: me })}>
+        <AppContext.Provider value={appValue({ projects, bugs, loading })}>
           <BugListForMP />
         </AppContext.Provider>
       </AuthContext.Provider>

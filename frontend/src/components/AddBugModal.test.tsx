@@ -2,16 +2,17 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import AddBugModal from './AddBugModal';
-import { AppContext } from '../context/AppContext';
+import { AppContext, type AppContextValue } from '../context/AppContext';
 import { NotificationContext } from '../context/NotificationContext';
 import { httpError } from '../test/httpError';
+import { appValue } from '../test/fixtures';
 
-function renderModal(addBug) {
+function renderModal(addBug: AppContextValue['addBug']) {
   const onClose = vi.fn();
   const notify = vi.fn();
   render(
     <NotificationContext.Provider value={{ notify }}>
-      <AppContext.Provider value={{ addBug }}>
+      <AppContext.Provider value={appValue({ addBug })}>
         <AddBugModal projectId={7} onClose={onClose} />
       </AppContext.Provider>
     </NotificationContext.Provider>
@@ -21,7 +22,7 @@ function renderModal(addBug) {
 
 describe('AddBugModal', () => {
   it('reports a bug with the chosen severity, priority and commit link', async () => {
-    const addBug = vi.fn().mockResolvedValue();
+    const addBug = vi.fn().mockResolvedValue(undefined);
     const { onClose, notify } = renderModal(addBug);
     const user = userEvent.setup();
 
@@ -45,7 +46,7 @@ describe('AddBugModal', () => {
   });
 
   it('uses Low severity and priority by default', async () => {
-    const addBug = vi.fn().mockResolvedValue();
+    const addBug = vi.fn().mockResolvedValue(undefined);
     renderModal(addBug);
     const user = userEvent.setup();
 

@@ -4,7 +4,7 @@ import { api } from "../api/client";
 import { AuthContext } from "./AuthContext";
 import type { Bug, NewBug, Project } from "../types";
 
-interface AppContextValue {
+export interface AppContextValue {
   projects: Project[];
   bugs: Bug[]; // bugs of all the projects in `projects`
   loading: boolean;
