@@ -1,25 +1,35 @@
-import { useContext, useState, useEffect, useId } from "react";
+import { useContext, useState, useEffect, useId, type FormEvent } from "react";
 import { api, getErrorMessage } from "../api/client";
 import { AuthContext } from "../context/AuthContext";
+import type { Team, User } from "../types";
 
-export default function TeamModal({ onClose }) {
+// GET /teams/my answers with the team, or with { team: null } when the user has none
+type MyTeamResponse = Team | { team: null };
+const toTeam = (data: MyTeamResponse): Team | null => ("id" in data ? data : null);
+
+interface Message {
+  type: "success" | "error";
+  text: string;
+}
+
+export default function TeamModal({ onClose }: { onClose: () => void }) {
   const { setUser } = useContext(AuthContext);
-  const [team, setTeam] = useState(null);
+  const [team, setTeam] = useState<Team | null>(null);
   const [loading, setLoading] = useState(true);
   const [teamName, setTeamName] = useState("");
   const [teamDesc, setTeamDesc] = useState("");
   const [inviteEmail, setInviteEmail] = useState("");
   const [creating, setCreating] = useState(false);
   const [inviting, setInviting] = useState(false);
-  const [message, setMessage] = useState(null); // { type: "success" | "error", text }
+  const [message, setMessage] = useState<Message | null>(null);
   const id = useId(); // unique ids that link each <label> to its field
 
   useEffect(() => {
     const fetchTeam = async () => {
       setLoading(true);
       try {
-        const res = await api.get("/teams/my");
-        setTeam(res.data);
+        const res = await api.get<MyTeamResponse>("/teams/my");
+        setTeam(toTeam(res.data));
       } catch (err) {
         console.error("Error fetching team:", err);
       } finally {
@@ -29,18 +39,18 @@ export default function TeamModal({ onClose }) {
     fetchTeam();
   }, []);
 
-  const handleCreate = async (e) => {
+  const handleCreate = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMessage(null);
     setCreating(true);
     try {
       await api.post("/teams", { name: teamName, description: teamDesc });
       // Refresh user info so teamId is set in context
-      const userRes = await api.get("/users/me");
+      const userRes = await api.get<User>("/users/me");
       if (userRes.data && setUser) setUser(userRes.data);
       // Refresh team data to get full team with Users
-      const teamRes = await api.get("/teams/my");
-      setTeam(teamRes.data);
+      const teamRes = await api.get<MyTeamResponse>("/teams/my");
+      setTeam(toTeam(teamRes.data));
       setMessage({ type: "success", text: "Team created." });
     } catch (err) {
       setMessage({ type: "error", text: getErrorMessage(err, "Could not create the team.") });
@@ -49,7 +59,7 @@ export default function TeamModal({ onClose }) {
     }
   };
 
-  const handleInvite = async (e) => {
+  const handleInvite = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setMessage(null);
     setInviting(true);
@@ -58,8 +68,8 @@ export default function TeamModal({ onClose }) {
       setMessage({ type: "success", text: `${inviteEmail} joined the team.` });
       setInviteEmail("");
       // Refresh team members
-      const res = await api.get("/teams/my");
-      setTeam(res.data);
+      const res = await api.get<MyTeamResponse>("/teams/my");
+      setTeam(toTeam(res.data));
     } catch (err) {
       setMessage({ type: "error", text: getErrorMessage(err, "Could not invite this user.") });
     } finally {
@@ -86,7 +96,7 @@ export default function TeamModal({ onClose }) {
           </p>
         )}
 
-        {!team || !team.id ? (
+        {!team ? (
           <form onSubmit={handleCreate}>
             <p>You are not in a team yet. Projects you create while in a team belong to the whole team.</p>
             <label htmlFor={`${id}-name`}>Team name</label>

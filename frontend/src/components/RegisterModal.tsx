@@ -1,16 +1,17 @@
-import { useState, useId } from "react";
-import { api, getErrorMessage } from "../api/client";
+import { useState, useId, type FormEvent } from "react";
+import { api, getErrorMessage, getErrorStatus } from "../api/client";
+import type { Role } from "../types";
 import { useNotify } from "../context/NotificationContext";
 
-export default function RegisterModal({ onClose }) {
+export default function RegisterModal({ onClose }: { onClose: () => void }) {
   const notify = useNotify();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("TST"); // default tester
+  const [role, setRole] = useState<Role>("TST"); // default tester
   const [error, setError] = useState("");
   const id = useId(); // unique ids that link each <label> to its field
 
-  const handleRegister = async (e) => {
+  const handleRegister = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     try {
@@ -20,7 +21,7 @@ export default function RegisterModal({ onClose }) {
       notify("Account created. You can now log in.");
       onClose();
     } catch (err) {
-      if (err.response?.status === 409) {
+      if (getErrorStatus(err) === 409) {
         setError("This email is already registered.");
       } else {
         // e.g. "Password too weak." or the rate limit message
@@ -56,7 +57,7 @@ export default function RegisterModal({ onClose }) {
           />
 
           <label htmlFor={`${id}-role`}>Role</label>
-          <select id={`${id}-role`} value={role} onChange={(e) => setRole(e.target.value)}>
+          <select id={`${id}-role`} value={role} onChange={(e) => setRole(e.target.value as Role)}>
             <option value="MP">Project member (MP)</option>
             <option value="TST">Tester (TST)</option>
           </select>

@@ -1,14 +1,20 @@
-import { useState, useContext, useId } from "react";
+import { useState, useContext, useId, type FormEvent } from "react";
 import { AppContext } from "../context/AppContext";
 import { useNotify } from "../context/NotificationContext";
 import { getErrorMessage } from "../api/client";
+import type { Priority, Severity } from "../types";
 
-export default function AddBugModal({ projectId, onClose }) {
+interface AddBugModalProps {
+  projectId: number;
+  onClose: () => void;
+}
+
+export default function AddBugModal({ projectId, onClose }: AddBugModalProps) {
   const { addBug } = useContext(AppContext);
   const notify = useNotify();
 
-  const [severity, setSeverity] = useState("Low");
-  const [priority, setPriority] = useState("Low");
+  const [severity, setSeverity] = useState<Severity>("Low");
+  const [priority, setPriority] = useState<Priority>("Low");
   const [description, setDescription] = useState("");
   const [commitLink, setCommitLink] = useState("");
   const [title, setTitle] = useState("");
@@ -16,7 +22,7 @@ export default function AddBugModal({ projectId, onClose }) {
   const [saving, setSaving] = useState(false);
   const id = useId(); // unique ids that link each <label> to its field
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setSaving(true);
@@ -59,7 +65,7 @@ export default function AddBugModal({ projectId, onClose }) {
           />
 
           <label htmlFor={`${id}-severity`}>Severity</label>
-          <select id={`${id}-severity`} value={severity} onChange={(e) => setSeverity(e.target.value)}>
+          <select id={`${id}-severity`} value={severity} onChange={(e) => setSeverity(e.target.value as Severity)}>
             <option>Low</option>
             <option>Medium</option>
             <option>High</option>
@@ -67,7 +73,7 @@ export default function AddBugModal({ projectId, onClose }) {
           </select>
 
           <label htmlFor={`${id}-priority`}>Priority</label>
-          <select id={`${id}-priority`} value={priority} onChange={(e) => setPriority(e.target.value)}>
+          <select id={`${id}-priority`} value={priority} onChange={(e) => setPriority(e.target.value as Priority)}>
             <option>Low</option>
             <option>Medium</option>
             <option>High</option>

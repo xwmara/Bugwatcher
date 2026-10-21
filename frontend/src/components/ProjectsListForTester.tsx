@@ -4,18 +4,22 @@ import { AuthContext } from "../context/AuthContext";
 import { useNotify } from "../context/NotificationContext";
 import { getErrorMessage } from "../api/client";
 import AddBugModal from "./AddBugModal";
+import { getOwnerLabel } from "../utils/owner";
+import type { Project } from "../types";
 
 export default function ProjectsListForTester() {
   const { projects, addTesterToProject, bugs } = useContext(AppContext);
   const { user } = useContext(AuthContext);
   const notify = useNotify();
 
-  const [selectedProjectId, setSelectedProjectId] = useState(null);
+  const [selectedProjectId, setSelectedProjectId] = useState<number | null>(null);
+  // Only shown on the tester home page, after login
+  if (!user) return null;
   if (projects.length === 0) {
     return <p>There are no projects yet. Please check back later.</p>;
   }
 
-  const handleJoin = (project) => {
+  const handleJoin = (project: Project) => {
     addTesterToProject(project.id, user.email)
       .then(() => {
         notify(`You joined "${project.title}" as a tester.`);
@@ -25,7 +29,7 @@ export default function ProjectsListForTester() {
       });
   };
 
-  const getBugCountForProject = (projectId) =>
+  const getBugCountForProject = (projectId: number) =>
     bugs.filter((b) => b.projectId === projectId).length;
 
   return (
@@ -40,7 +44,7 @@ export default function ProjectsListForTester() {
             <div key={p.id} className="tester-project-card">
               <h4>{p.title}</h4>
               <p><strong>Repository:</strong> {p.commit_link}</p>
-              <p><strong>Owner:</strong> {p.Owner?.email || p.Owner?.name || "—"}</p>
+              <p><strong>Owner:</strong> {getOwnerLabel(p)}</p>
               <p><strong>Testers:</strong> {p.testers?.length || 0}</p>
               <p><strong>Bugs:</strong> {bugCount}</p>
 

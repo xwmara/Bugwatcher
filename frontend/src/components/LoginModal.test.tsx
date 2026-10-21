@@ -5,18 +5,20 @@ import LoginModal from './LoginModal';
 import { AuthContext } from '../context/AuthContext';
 import { api } from '../api/client';
 import { httpError, networkError } from '../test/httpError';
+import { authValue, makeUser, okResponse } from '../test/fixtures';
 
 // Replace the real HTTP client: the tests decide what the "server" answers
 vi.mock('../api/client', async (importOriginal) => ({
-  ...(await importOriginal()),
+  ...(await importOriginal<typeof import('../api/client')>()),
   api: { post: vi.fn() },
 }));
+const post = vi.mocked(api.post);
 
 function renderLogin() {
   const loginUser = vi.fn();
   const onClose = vi.fn();
   render(
-    <AuthContext.Provider value={{ loginUser }}>
+    <AuthContext.Provider value={authValue({ loginUser })}>
       <LoginModal onClose={onClose} />
     </AuthContext.Provider>
   );
@@ -32,23 +34,23 @@ async function fillAndSubmit(email = 'ana@example.com', password = 'secret-passw
 
 describe('LoginModal', () => {
   beforeEach(() => {
-    api.post.mockReset();
+    post.mockReset();
   });
 
   it('logs the user in and closes the modal', async () => {
-    const userData = { id: 1, email: 'ana@example.com', role: 'MP' };
-    api.post.mockResolvedValue({ data: userData });
+    const userData = makeUser({ email: 'ana@example.com' });
+    post.mockResolvedValue(okResponse(userData));
     const { loginUser, onClose } = renderLogin();
 
     await fillAndSubmit();
 
-    expect(api.post).toHaveBeenCalledWith('/users/login', { email: 'ana@example.com', password: 'secret-password' });
+    expect(post).toHaveBeenCalledWith('/users/login', { email: 'ana@example.com', password: 'secret-password' });
     expect(loginUser).toHaveBeenCalledWith(userData);
     expect(onClose).toHaveBeenCalled();
   });
 
   it('shows an error for a wrong email or password and stays open', async () => {
-    api.post.mockRejectedValue(httpError(401, 'Invalid email or password.'));
+    post.mockRejectedValue(httpError(401, 'Invalid email or password.'));
     const { loginUser, onClose } = renderLogin();
 
     await fillAndSubmit();
@@ -59,7 +61,7 @@ describe('LoginModal', () => {
   });
 
   it('shows the message from the server for other errors (e.g. too many attempts)', async () => {
-    api.post.mockRejectedValue(httpError(429, 'Too many login attempts. Please try again in 15 minutes.'));
+    post.mockRejectedValue(httpError(429, 'Too many login attempts. Please try again in 15 minutes.'));
     renderLogin();
 
     await fillAndSubmit();
@@ -68,7 +70,7 @@ describe('LoginModal', () => {
   });
 
   it('shows a fallback message when the server cannot be reached', async () => {
-    api.post.mockRejectedValue(networkError());
+    post.mockRejectedValue(networkError());
     renderLogin();
 
     await fillAndSubmit();
@@ -79,13 +81,13 @@ describe('LoginModal', () => {
   it('does not send the form while fields are empty', async () => {
     renderLogin();
     await userEvent.setup().click(screen.getByRole('button', { name: 'Log in' }));
-    expect(api.post).not.toHaveBeenCalled();
+    expect(post).not.toHaveBeenCalled();
   });
 
   it('closes when Cancel is clicked', async () => {
     const { onClose } = renderLogin();
     await userEvent.setup().click(screen.getByRole('button', { name: 'Cancel' }));
     expect(onClose).toHaveBeenCalled();
-    expect(api.post).not.toHaveBeenCalled();
+    expect(post).not.toHaveBeenCalled();
   });
 });

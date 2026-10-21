@@ -5,11 +5,13 @@ import RegisterModal from './RegisterModal';
 import { NotificationContext } from '../context/NotificationContext';
 import { api } from '../api/client';
 import { httpError } from '../test/httpError';
+import { okResponse } from '../test/fixtures';
 
 vi.mock('../api/client', async (importOriginal) => ({
-  ...(await importOriginal()),
+  ...(await importOriginal<typeof import('../api/client')>()),
   api: { post: vi.fn() },
 }));
+const post = vi.mocked(api.post);
 
 function renderRegister() {
   const notify = vi.fn();
@@ -22,7 +24,7 @@ function renderRegister() {
   return { notify, onClose };
 }
 
-async function fillAndSubmit({ role } = {}) {
+async function fillAndSubmit({ role }: { role?: 'MP' | 'TST' } = {}) {
   const user = userEvent.setup();
   await user.type(screen.getByLabelText('Email'), 'ana@example.com');
   await user.type(screen.getByLabelText('Password'), 'Correct-Horse-Battery-42');
@@ -32,16 +34,16 @@ async function fillAndSubmit({ role } = {}) {
 
 describe('RegisterModal', () => {
   beforeEach(() => {
-    api.post.mockReset();
+    post.mockReset();
   });
 
   it('registers a tester by default, confirms and closes', async () => {
-    api.post.mockResolvedValue({ status: 201, data: { id: 1 } });
+    post.mockResolvedValue(okResponse({ id: 1 }, 201));
     const { notify, onClose } = renderRegister();
 
     await fillAndSubmit();
 
-    expect(api.post).toHaveBeenCalledWith('/users/register', {
+    expect(post).toHaveBeenCalledWith('/users/register', {
       email: 'ana@example.com',
       password: 'Correct-Horse-Battery-42',
       role: 'TST',
@@ -51,16 +53,16 @@ describe('RegisterModal', () => {
   });
 
   it('sends the chosen role', async () => {
-    api.post.mockResolvedValue({ status: 201, data: {} });
+    post.mockResolvedValue(okResponse({}, 201));
     renderRegister();
 
     await fillAndSubmit({ role: 'MP' });
 
-    expect(api.post.mock.calls[0][1].role).toBe('MP');
+    expect(post).toHaveBeenCalledWith('/users/register', expect.objectContaining({ role: 'MP' }));
   });
 
   it('says when the email is already used', async () => {
-    api.post.mockRejectedValue(httpError(409, 'User with this email already exists.'));
+    post.mockRejectedValue(httpError(409, 'User with this email already exists.'));
     const { onClose } = renderRegister();
 
     await fillAndSubmit();
@@ -70,7 +72,7 @@ describe('RegisterModal', () => {
   });
 
   it('shows the reason from the server, e.g. a weak password', async () => {
-    api.post.mockRejectedValue(httpError(400, 'Password too weak.'));
+    post.mockRejectedValue(httpError(400, 'Password too weak.'));
     const { notify } = renderRegister();
 
     await fillAndSubmit();

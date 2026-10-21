@@ -16,7 +16,7 @@ export default function BugListForMP() {
     .filter((b) => b.assignedUserId === user.id && b.status !== "CLOSED")
     .sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity]);
 
-  const getProjectTitle = (projectId) =>
+  const getProjectTitle = (projectId: number) =>
     projects.find((p) => p.id === projectId)?.title || "—";
 
   return (

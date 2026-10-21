@@ -1,6 +1,7 @@
 import { useContext } from "react";
 import { AppContext } from "../context/AppContext";
 import { useNavigate } from "react-router-dom";
+import { getOwnerLabel } from "../utils/owner";
 
 export default function ProjectTable() {
   const { projects, bugs, loading } = useContext(AppContext);
@@ -13,10 +14,10 @@ export default function ProjectTable() {
     return <p>You have no projects yet. Create your first one below.</p>;
   }
 
-  const getBugCountForProject = (projectId) =>
+  const getBugCountForProject = (projectId: number) =>
     bugs.filter((b) => b.projectId === projectId).length;
 
-  const handleProjectClick = (pid) => {
+  const handleProjectClick = (pid: number) => {
     navigate(`/projects/${pid}`)
   }
 
@@ -41,8 +42,7 @@ export default function ProjectTable() {
                 {p.commit_link}
               </a>
             </td>
-            {/* Owner is a user (email) or a team (name) */}
-            <td>{p.Owner?.email || p.Owner?.name || "—"}</td>
+            <td>{getOwnerLabel(p)}</td>
             <td>{p.Users?.map((u) => u.email).join(", ") || "—"}</td>
             <td>{getBugCountForProject(p.id)}</td>
           </tr>

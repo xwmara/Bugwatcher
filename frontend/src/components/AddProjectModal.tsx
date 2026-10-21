@@ -1,9 +1,9 @@
-import { useState, useContext, useId } from "react";
+import { useState, useContext, useId, type FormEvent } from "react";
 import { AppContext } from "../context/AppContext";
 import { useNotify } from "../context/NotificationContext";
 import { api, getErrorMessage } from "../api/client";
 
-export default function AddProjectModal({ onClose }) {
+export default function AddProjectModal({ onClose }: { onClose: () => void }) {
   const { fetchProjects } = useContext(AppContext);
   const notify = useNotify();
 
@@ -13,7 +13,7 @@ export default function AddProjectModal({ onClose }) {
   const [saving, setSaving] = useState(false);
   const id = useId(); // unique ids that link each <label> to its field
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     setSaving(true);

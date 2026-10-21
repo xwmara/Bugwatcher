@@ -1,16 +1,18 @@
-import { api } from "../../api/client";
+import { api, getErrorStatus } from "../../api/client";
 import { useContext, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 
 import './projectPage.css';
 import { AppContext } from "../../context/AppContext";
 import { STATUS_LABELS } from "../../constants/bugs";
+import { getOwnerLabel } from "../../utils/owner";
+import type { Project } from "../../types";
 
 export const ProjectPage = () => {
   const { id } = useParams();
-  const [project, setProject] = useState(null);
+  const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
-  const [errorStatus, setErrorStatus] = useState(null);
+  const [errorStatus, setErrorStatus] = useState<number | "network" | null>(null);
   const { bugs } = useContext(AppContext);
 
   // Filter bugs for current project
@@ -21,11 +23,11 @@ export const ProjectPage = () => {
       setLoading(true);
       setErrorStatus(null);
       try {
-        const res = await api.get(`/projects/${id}`);
+        const res = await api.get<Project>(`/projects/${id}`);
         setProject(res.data);
       } catch (error) {
         setProject(null);
-        setErrorStatus(error.response?.status ?? "network");
+        setErrorStatus(getErrorStatus(error) ?? "network");
       } finally {
         setLoading(false);
       }
@@ -53,7 +55,7 @@ export const ProjectPage = () => {
         <h1>{project.title}</h1>
         <p>{project.description || "No description."}</p>
         <p>
-          <strong>Owner: </strong> {project.Owner?.email || project.Owner?.name || "—"}
+          <strong>Owner: </strong> {getOwnerLabel(project)}
         </p>
         <p>
           <strong>Repository: </strong>{" "}
