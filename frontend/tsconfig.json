@@ -1,0 +1,27 @@
+{
+  // TypeScript settings for the React app (src/). Vite compiles the code; tsc only checks types
+  // (npm run typecheck), so "noEmit" is on.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "noEmit": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "types": ["vite/client"],
+
+    // Type checking rules
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+
+    // While files are converted one by one, .js/.jsx files are allowed next to .ts/.tsx
+    "allowJs": true,
+    "checkJs": false
+  },
+  "include": ["src"]
+}
