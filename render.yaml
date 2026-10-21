@@ -16,10 +16,13 @@ services:
         value: production
       - key: NODE_VERSION
         value: "24"
-      # Number of proxies in front of the app (Vercel rewrite + Render load balancer).
-      # Checked after the first deploy with DEBUG_IP=true (see backend/app.js).
+      # Number of proxies in front of the app, measured with DEBUG_IP=true (see backend/app.js):
+      # Vercel rewrite -> Cloudflare -> Render load balancer -> app, so X-Forwarded-For is
+      # "visitor, vercel, cloudflare, render" and the visitor is 4 hops back.
+      # Known limit: requests sent straight to the onrender.com URL could fake one extra hop
+      # and avoid the login rate limit; the public site always goes through Vercel.
       - key: TRUST_PROXY
-        value: "2"
+        value: "4"
       - key: JWT_SECRET
         generateValue: true
       - key: DATABASE_URL
