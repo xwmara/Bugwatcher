@@ -1,22 +1,33 @@
 /* eslint-disable react-refresh/only-export-components */
-import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 
 // Short messages shown in a corner of the screen ("Bug reported.", "Could not join the project.").
 // They replace alert(): they do not block the page and disappear after a few seconds.
 const NOTICE_DURATION_MS = 4000;
 
-export const NotificationContext = createContext({ notify: () => {} });
+export type NoticeType = "success" | "error";
 
-export const NotificationProvider = ({ children }) => {
-  const [notices, setNotices] = useState([]);
+interface Notice {
+  id: number;
+  text: string;
+  type: NoticeType;
+}
+
+interface NotificationContextValue {
+  notify: (text: string, type?: NoticeType) => void;
+}
+
+export const NotificationContext = createContext<NotificationContextValue>({ notify: () => {} });
+
+export const NotificationProvider = ({ children }: { children: ReactNode }) => {
+  const [notices, setNotices] = useState<Notice[]>([]);
   const nextId = useRef(0);
 
-  const dismiss = useCallback((id) => {
+  const dismiss = useCallback((id: number) => {
     setNotices((prev) => prev.filter((n) => n.id !== id));
   }, []);
 
-  // type: "success" or "error"
-  const notify = useCallback((text, type = "success") => {
+  const notify = useCallback((text: string, type: NoticeType = "success") => {
     const id = nextId.current++;
     setNotices((prev) => [...prev, { id, text, type }]);
     setTimeout(() => dismiss(id), NOTICE_DURATION_MS);
