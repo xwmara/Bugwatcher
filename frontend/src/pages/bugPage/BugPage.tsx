@@ -1,13 +1,26 @@
-import { api, getErrorMessage } from "../../api/client";
-import { useContext, useEffect, useId, useState } from "react";
+import { api, getErrorMessage, getErrorStatus } from "../../api/client";
+import { useContext, useEffect, useId, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router-dom";
 import { AuthContext } from "../../context/AuthContext";
 import { AppContext } from "../../context/AppContext";
 import { STATUSES, STATUS_LABELS } from "../../constants/bugs";
+import type { Bug, BugStatus, Project, UserSummary } from "../../types";
 import "./bugPage.css";
 
+// Fields the bug page can change
+interface BugChanges {
+  assignedUserId?: number;
+  status?: BugStatus;
+  resolutionCommit?: string;
+}
+
+interface Message {
+  type: "success" | "error";
+  text: string;
+}
+
 // Shows a commit link, or a dash when there is none
-const CommitLink = ({ href }) =>
+const CommitLink = ({ href }: { href: string | null }) =>
   href ? <a href={href} target="_blank" rel="noreferrer">{href}</a> : <span>—</span>;
 
 export const BugPage = () => {
@@ -16,29 +29,29 @@ export const BugPage = () => {
   const { fetchProjects } = useContext(AppContext);
   const fieldId = useId();
 
-  const [bug, setBug] = useState(null);
-  const [project, setProject] = useState(null);
-  const [teamMembers, setTeamMembers] = useState([]);
+  const [bug, setBug] = useState<Bug | null>(null);
+  const [project, setProject] = useState<Project | null>(null);
+  const [teamMembers, setTeamMembers] = useState<UserSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [errorStatus, setErrorStatus] = useState(null);
+  const [errorStatus, setErrorStatus] = useState<number | "network" | null>(null);
 
   const [selectedUserId, setSelectedUserId] = useState("");
-  const [status, setStatus] = useState("");
+  const [status, setStatus] = useState<BugStatus>("OPEN");
   const [resolutionCommit, setResolutionCommit] = useState("");
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState(null); // { type: "success" | "error", text }
+  const [message, setMessage] = useState<Message | null>(null);
 
   useEffect(() => {
     const fetchBug = async () => {
       setLoading(true);
       try {
-        const res = await api.get(`/bugs/${id}`);
+        const res = await api.get<Bug>(`/bugs/${id}`);
         setBug(res.data);
         setStatus(res.data.status);
         setResolutionCommit(res.data.resolutionCommit || "");
 
         // Fetch project to get team members
-        const projRes = await api.get(`/projects/${res.data.projectId}`);
+        const projRes = await api.get<Project>(`/projects/${res.data.projectId}`);
         setProject(projRes.data);
 
         // team members are MP users associated with project (only MPs can be assigned bugs)
@@ -46,7 +59,7 @@ export const BugPage = () => {
         setTeamMembers(mpMembers);
       } catch (err) {
         setBug(null);
-        setErrorStatus(err.response?.status ?? "network");
+        setErrorStatus(getErrorStatus(err) ?? "network");
       } finally {
         setLoading(false);
       }
@@ -64,12 +77,12 @@ export const BugPage = () => {
   };
 
   // Sends the changes, reloads the bug and refreshes the lists on the home page
-  const saveChanges = async (changes, successText) => {
+  const saveChanges = async (changes: BugChanges, successText: string) => {
     setSaving(true);
     setMessage(null);
     try {
       await api.put(`/bugs/${id}`, changes);
-      const res = await api.get(`/bugs/${id}`);
+      const res = await api.get<Bug>(`/bugs/${id}`);
       setBug(res.data);
       setStatus(res.data.status);
       setResolutionCommit(res.data.resolutionCommit || "");
@@ -87,9 +100,9 @@ export const BugPage = () => {
     saveChanges({ assignedUserId: parseInt(selectedUserId, 10) }, "Bug assigned.");
   };
 
-  const handleStatusSave = (e) => {
+  const handleStatusSave = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const changes = { status };
+    const changes: BugChanges = { status };
     if (status === "RESOLVED") changes.resolutionCommit = resolutionCommit;
     saveChanges(changes, `Status changed to "${STATUS_LABELS[status]}".`);
   };
@@ -154,7 +167,7 @@ export const BugPage = () => {
           <form className="assign-section" onSubmit={handleStatusSave}>
             <h3>Status</h3>
             <label htmlFor={`${fieldId}-status`}>New status</label>
-            <select id={`${fieldId}-status`} value={status} onChange={(e) => setStatus(e.target.value)}>
+            <select id={`${fieldId}-status`} value={status} onChange={(e) => setStatus(e.target.value as BugStatus)}>
               {STATUSES.map((s) => (
                 <option key={s} value={s}>{STATUS_LABELS[s]}</option>
               ))}
