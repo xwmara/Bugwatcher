@@ -1,8 +1,9 @@
-import { useState, useContext, useId } from "react";
+import { useState, useContext, useId, type FormEvent } from "react";
 import { AuthContext } from "../context/AuthContext";
-import { api, getErrorMessage } from "../api/client";
+import { api, getErrorMessage, getErrorStatus } from "../api/client";
+import type { User } from "../types";
 
-export default function LoginModal({ onClose }) {
+export default function LoginModal({ onClose }: { onClose: () => void }) {
   const { loginUser } = useContext(AuthContext);
 
   const [email, setEmail] = useState("");
@@ -10,15 +11,15 @@ export default function LoginModal({ onClose }) {
   const [error, setError] = useState("");
   const id = useId(); // unique ids that link each <label> to its field
 
-  const handleLogin = async (e) => {
+  const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
     try {
-      const res = await api.post('/users/login', { email, password });
+      const res = await api.post<User>('/users/login', { email, password });
       loginUser(res.data);
       onClose();
     } catch (err) {
-      if (err.response?.status === 401) {
+      if (getErrorStatus(err) === 401) {
         setError("Incorrect email or password.");
       } else {
         // e.g. the rate limit message, or no connection to the server
